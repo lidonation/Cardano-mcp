@@ -1,0 +1,55 @@
+import { Callout } from "@/components/Callout";
+
+# Indexer Module
+
+**Phase 2** · 4 tools · Kupo + Yaci Store
+
+The indexer module provides pattern-based UTxO watching and custom indexer queries.
+Unlike the query module which reads current chain state, the indexer tracks changes
+over time and persists them across restarts.
+
+## Tools
+
+| Tool | API | Description |
+|------|-----|-------------|
+| `watch_address` | Kupo | Register a watch pattern for an address or script |
+| `query_kupo_matches` | Kupo | Query UTxOs matching a registered pattern |
+| `get_rollup_status` | Kupo | Kupo health and sync status |
+| `query_custom_indexer` | Yaci Store | REST passthrough to custom indexer |
+
+## Kupo setup
+
+Kupo requires a running Cardano node. Quick start with Docker:
+
+```bash
+docker run -d \
+  -p 1442:1442 \
+  -v /path/to/node/socket:/ipc \
+  cardanosolutions/kupo:latest \
+  --node-socket /ipc/node.socket \
+  --node-config /config/mainnet/config.json \
+  --since origin \
+  --match '*'
+```
+
+Then set `KUPO_URL=http://localhost:1442` in your `.env`.
+
+<Callout type="warn">
+  The indexer module requires local infrastructure. If `KUPO_URL` is not configured,
+  all indexer tools will return an error with setup instructions.
+</Callout>
+
+## Watch patterns
+
+Kupo patterns follow the format `address/*` or `*@policyId`:
+
+```
+addr1qxy.../0  — specific UTxO
+addr1qxy.../*  — all UTxOs at address
+*@abc123       — all UTxOs with policy abc123
+```
+
+## Yaci Store
+
+Yaci Store provides a REST API over a custom Postgres indexer built from Cardano blocks.
+`query_custom_indexer` is a passthrough — any valid Yaci Store endpoint can be queried.

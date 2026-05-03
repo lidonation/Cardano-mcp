@@ -1,0 +1,52 @@
+import { Callout } from "@/components/Callout";
+import { EnvTable } from "@/components/EnvTable";
+
+# Installation
+
+## Prerequisites
+
+- **Node.js 20+** — check with `node --version`
+- **pnpm** — `npm install -g pnpm`
+- A **Blockfrost project ID** — free at [blockfrost.io](https://blockfrost.io)
+
+## Clone and build
+
+```bash
+git clone https://github.com/your-org/cardano-mcp
+cd cardano-mcp
+pnpm install
+pnpm build
+```
+
+The build step compiles TypeScript and copies resource files to `dist/`.
+
+## Environment variables
+
+Copy the example env file and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+<EnvTable rows={[
+  { key: "CARDANO_NETWORK", required: false, default: "mainnet", description: "Network: mainnet | preprod | preview" },
+  { key: "BLOCKFROST_PROJECT_ID", required: true, description: "Blockfrost project ID — required for most tools" },
+  { key: "KOIOS_URL", required: false, default: "https://api.koios.rest/api/v1", description: "Koios API base URL — auto-set per network" },
+  { key: "MAESTRO_API_KEY", required: false, description: "Optional — enables faster multi-address UTxO queries" },
+  { key: "KUPO_URL", required: false, default: "http://localhost:1442", description: "Optional — only required for indexer module" },
+  { key: "YACI_STORE_URL", required: false, default: "http://localhost:8080", description: "Optional — only required for custom indexer passthrough" },
+]} />
+
+<Callout type="info">
+  Only `BLOCKFROST_PROJECT_ID` is required to get started. The governance and query modules
+  also work without it via Koios (the free public API).
+</Callout>
+
+## Verify the build
+
+```bash
+node dist/index.js
+# Cardano MCP server running (mainnet) via stdio
+```
+
+The server speaks MCP over stdio — no port is opened.

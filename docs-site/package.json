@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/gen-tool-docs.ts && next build",
+    "build": "tsx scripts/gen-tool-docs.ts && tsx scripts/gen-brand-assets.ts && next build",
     "gen": "tsx scripts/gen-tool-docs.ts",
+    "brand": "tsx scripts/gen-brand-assets.ts",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "geist": "^1.7.0",
     "next": "14.2.29",
     "nextra": "3.3.1",
     "nextra-theme-docs": "3.3.1",
@@ -20,6 +22,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
+    "sharp": "^0.34.5",
     "tsx": "^4.0.0",
     "typescript": "^5.4.0",
     "zod": "^4.4.2"

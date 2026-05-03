@@ -1,0 +1,42 @@
+import { Callout } from "@/components/Callout";
+import { KV } from "@/components/KV";
+
+# Query Module
+
+**Phase 1** · 6 tools · Blockfrost + Koios + Maestro
+
+The query module provides low-level access to Cardano chain state: UTxOs, transactions,
+assets, blocks, and address history. These are the building blocks for every other tool.
+
+## Tools
+
+| Tool | API | Description |
+|------|-----|-------------|
+| `get_address_utxos` | Blockfrost | All UTxOs at an address |
+| `get_tx_details` | Blockfrost | Full transaction with inputs/outputs |
+| `get_asset_info` | Blockfrost/Maestro | Asset details by policy+name |
+| `get_block_info` | Koios | Block by hash or slot |
+| `query_address_history` | Koios | Transaction history for an address |
+| `get_network_info` | Koios | Current epoch, tip, live stake |
+
+## Key concepts
+
+<KV rows={[
+  { k: "UTxO", v: "txHash + outputIndex — the unique ID of a spendable output" },
+  { k: "lovelace", v: "1 ADA = 1,000,000 lovelace — all amounts in lovelace" },
+  { k: "asset unit", v: 'policyId + "." + hex(assetName)' },
+]} />
+
+<Callout type="info">
+  `get_address_utxos` is the most frequently used tool. The sum of lovelace across
+  all UTxOs is the wallet balance. There is no separate "balance" endpoint.
+</Callout>
+
+## Example
+
+```
+Fetch all UTxOs at addr1qxy... and calculate the ADA balance
+```
+
+Claude will call `get_address_utxos`, then sum the lovelace values and divide by
+1,000,000 to display ADA.

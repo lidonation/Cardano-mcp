@@ -1,0 +1,230 @@
+[
+  {
+    "name": "get_address_utxos",
+    "module": "query",
+    "description": "Fetch all UTxOs at a given Cardano address, optionally filtered by asset.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "get_tx_details",
+    "module": "query",
+    "description": "Retrieve full transaction details including inputs, outputs, metadata, and fees.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "get_asset_info",
+    "module": "query",
+    "description": "Look up a native asset by its concatenated policyId+assetName hex string.",
+    "upstream": ["Blockfrost", "Maestro"]
+  },
+  {
+    "name": "get_block_info",
+    "module": "query",
+    "description": "Retrieve block details by hash or absolute slot number.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "query_address_history",
+    "module": "query",
+    "description": "List all transactions involving an address, newest first.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_network_info",
+    "module": "query",
+    "description": "Return current epoch, slot tip, and live stake snapshot from the network.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_nft_metadata",
+    "module": "tokens",
+    "description": "Fetch CIP-25 or CIP-68 NFT metadata for a given asset.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "list_wallet_assets",
+    "module": "tokens",
+    "description": "List all native assets held at an address with quantities.",
+    "upstream": ["Koios", "Maestro"]
+  },
+  {
+    "name": "build_mint_transaction",
+    "module": "tokens",
+    "description": "Build an unsigned transaction that mints native tokens using a Plutus or native script.",
+    "upstream": ["Blockfrost", "Mesh SDK"]
+  },
+  {
+    "name": "get_policy_assets",
+    "module": "tokens",
+    "description": "List all assets under a given minting policy ID.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "get_protocol_params",
+    "module": "txbuilder",
+    "description": "Fetch the current epoch's protocol parameters including min fee coefficients and execution prices.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "calculate_min_ada",
+    "module": "txbuilder",
+    "description": "Calculate the minimum ADA required for a UTxO holding given native assets.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "build_payment_tx",
+    "module": "txbuilder",
+    "description": "Build an unsigned ADA payment transaction between two addresses.",
+    "upstream": ["Blockfrost", "Mesh SDK"]
+  },
+  {
+    "name": "build_smart_contract_tx",
+    "module": "txbuilder",
+    "description": "Build a Plutus smart contract transaction with datum and redeemer.",
+    "upstream": ["Blockfrost", "Mesh SDK"]
+  },
+  {
+    "name": "submit_transaction",
+    "module": "txbuilder",
+    "description": "Submit a signed CBOR transaction to the Cardano network.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "explain_eutxo_model",
+    "module": "contracts",
+    "description": "Return the bundled eUTxO explainer resource for AI context injection.",
+    "upstream": ["local"]
+  },
+  {
+    "name": "get_aiken_stdlib_docs",
+    "module": "contracts",
+    "description": "Return bundled Aiken standard library quick reference.",
+    "upstream": ["local"]
+  },
+  {
+    "name": "validate_aiken_snippet",
+    "module": "contracts",
+    "description": "Run `aiken check` on a Plutus validator snippet and return compiler output.",
+    "upstream": ["Aiken CLI"]
+  },
+  {
+    "name": "get_script_info",
+    "module": "contracts",
+    "description": "Fetch script type, size, serialised CBOR, and reference UTxOs for a script hash.",
+    "upstream": ["Blockfrost"]
+  },
+  {
+    "name": "decode_cbor_datum",
+    "module": "contracts",
+    "description": "Decode a raw CBOR datum hex string into human-readable JSON using the Cardano Serialization Library.",
+    "upstream": ["CSL"]
+  },
+  {
+    "name": "scaffold_validator",
+    "module": "contracts",
+    "description": "Generate an Aiken validator scaffold for common patterns: escrow, vesting, or NFT gating.",
+    "upstream": ["local"]
+  },
+  {
+    "name": "encode_plutus_data",
+    "module": "contracts",
+    "description": "Encode a JSON Plutus data structure back to CBOR hex for use in transactions.",
+    "upstream": ["CSL"]
+  },
+  {
+    "name": "watch_address",
+    "module": "indexer",
+    "description": "Register a Kupo watch pattern for an address or script hash.",
+    "upstream": ["Kupo"]
+  },
+  {
+    "name": "query_kupo_matches",
+    "module": "indexer",
+    "description": "Query Kupo for all UTxO matches against a registered pattern.",
+    "upstream": ["Kupo"]
+  },
+  {
+    "name": "get_rollup_status",
+    "module": "indexer",
+    "description": "Check Kupo health and synchronisation status.",
+    "upstream": ["Kupo"]
+  },
+  {
+    "name": "query_custom_indexer",
+    "module": "indexer",
+    "description": "Pass-through REST query to a Yaci Store custom indexer endpoint.",
+    "upstream": ["Yaci Store"]
+  },
+  {
+    "name": "list_governance_proposals",
+    "module": "governance",
+    "description": "List on-chain governance proposals filtered by status or action type.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_proposal_details",
+    "module": "governance",
+    "description": "Get full details for a governance proposal by its CIP-129 bech32 ID.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_proposal_votes",
+    "module": "governance",
+    "description": "Retrieve all DRep, SPO, and CC votes cast on a proposal.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "list_dreps",
+    "module": "governance",
+    "description": "List all registered DReps with delegation counts and status.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_drep_info",
+    "module": "governance",
+    "description": "Fetch profile, anchor, and voting history for a DRep by bech32 ID.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_drep_votes",
+    "module": "governance",
+    "description": "List all votes cast by a specific DRep.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_drep_delegators",
+    "module": "governance",
+    "description": "List all stake addresses delegated to a DRep.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "list_committee_members",
+    "module": "governance",
+    "description": "List all Constitutional Committee members with term expiry and status.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_committee_member_votes",
+    "module": "governance",
+    "description": "Fetch all votes cast by a specific Constitutional Committee member.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_voter_proposal_votes",
+    "module": "governance",
+    "description": "Get all votes a specific voter (DRep, SPO, or CC) cast on all proposals.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_treasury_balance",
+    "module": "governance",
+    "description": "Return current Cardano treasury balance and reserves in lovelace.",
+    "upstream": ["Koios"]
+  },
+  {
+    "name": "get_constitution",
+    "module": "governance",
+    "description": "Fetch the current on-chain constitution anchor URL and hash.",
+    "upstream": ["Koios"]
+  }
+]

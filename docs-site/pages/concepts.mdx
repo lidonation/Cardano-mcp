@@ -1,0 +1,82 @@
+import { Callout } from "@/components/Callout";
+import { KV } from "@/components/KV";
+
+# Cardano Concepts
+
+This page covers the key concepts you need to understand when working with Cardano
+through an AI agent.
+
+## eUTxO vs. Account Model
+
+Cardano uses the **Extended Unspent Transaction Output (eUTxO)** model. Ethereum uses
+accounts. They are fundamentally different.
+
+<KV rows={[
+  { k: "Ethereum", v: "Addresses have balances. Smart contracts hold and modify state. Transactions call functions." },
+  { k: "Cardano", v: "There are no balances. Only UTxOs. Smart contracts are validators. Datums hold state." },
+]} />
+
+**What this means in practice:**
+- To find a wallet's balance, you sum all UTxOs at that address
+- Smart contracts don't run code — they approve or deny spending a UTxO
+- State lives in datums attached to UTxOs, not in contracts
+
+## UTxO structure
+
+Every UTxO has:
+- `txHash` + `outputIndex` — the unique identifier
+- `address` — the owner (or script) that can spend it
+- `value` — lovelace + any native assets
+- `datum` (optional) — arbitrary data, used by smart contracts
+
+## Encoding reference
+
+<KV rows={[
+  { k: "1 ADA", v: "1,000,000 lovelace — always work in lovelace internally" },
+  { k: "Asset ID", v: 'policyId + "." + hex(assetName) — e.g. "abc123.4d79546f6b656e"' },
+  { k: "Mainnet address", v: "bech32 starting with addr1..." },
+  { k: "Testnet address", v: "bech32 starting with addr_test1..." },
+  { k: "Script hash", v: "hex, exactly 56 characters" },
+  { k: "Transaction ID", v: "hex, exactly 64 characters" },
+  { k: "Datum", v: "raw CBOR hex — use decode_cbor_datum to read" },
+]} />
+
+<Callout type="warn" title="All amounts are strings">
+  Blockfrost and Koios return amounts as strings (e.g. `"2000000"`) to avoid JavaScript
+  BigInt overflow. Never parse them with `parseInt()` — use `BigInt()` instead.
+</Callout>
+
+## Plutus validators
+
+A Plutus validator is a function with signature:
+
+```
+validator(datum, redeemer, context) → Bool
+```
+
+- **Datum** — the "state" locked in the UTxO
+- **Redeemer** — the "action" the spender provides
+- **Context** — the full transaction being validated
+
+The validator runs on-chain and returns `True` (spending allowed) or `False` (rejected).
+
+## Native assets
+
+Cardano supports native multi-asset at the protocol level — no ERC-20 equivalent needed.
+Assets are identified by `policyId + assetName`. The policy script controls minting.
+
+NFT metadata follows either CIP-25 (label 721) or CIP-68 (reference UTxO pattern).
+
+## CIP-1694 Governance
+
+On-chain governance launched with the Plomin Hard Fork (January 2025).
+
+Three voting bodies:
+- **DReps** — any ada holder can register; stake is delegated to them
+- **SPOs** — stake pool operators vote on hard fork actions
+- **Constitutional Committee** — safeguards the constitution; 7 action types
+
+Proposal IDs use CIP-129 bech32 encoding: `gov_action1...`
+DRep IDs: `drep1...` per CIP-0005.
+
+Use the `governance` module to query all of this from mainnet today.

@@ -1,0 +1,62 @@
+import { Callout } from "@/components/Callout";
+import { EnvTable } from "@/components/EnvTable";
+import { KV } from "@/components/KV";
+
+# Configuration
+
+## Network selection
+
+Set `CARDANO_NETWORK` to target a specific network. The base URLs for Koios and Blockfrost
+are automatically adjusted:
+
+<KV rows={[
+  { k: "mainnet", v: "Production network — real ADA, full governance" },
+  { k: "preprod", v: "Pre-production testnet — mirrors mainnet features with test ADA" },
+  { k: "preview", v: "Preview testnet — bleeding-edge features, shorter epochs" },
+]} />
+
+```bash
+CARDANO_NETWORK=preprod
+BLOCKFROST_PROJECT_ID=preprodXXXXXXXXXXXXXX
+```
+
+<Callout type="warn">
+  Blockfrost project IDs are network-specific. A `mainnet` project ID will not work
+  against `preprod`. Make sure they match.
+</Callout>
+
+## API providers
+
+### Blockfrost (required)
+
+Used by: `query`, `tokens`, `txbuilder`, `contracts` modules.
+
+Get a free key at [blockfrost.io/dashboard](https://blockfrost.io/dashboard). The free
+tier allows 50,000 requests/day.
+
+### Koios (free, no key needed)
+
+Used by: `query`, `tokens`, `governance` modules.
+
+Koios is a decentralised public API — no registration required. The URL is set automatically
+based on `CARDANO_NETWORK`.
+
+### Maestro (optional)
+
+Used by: `query` module (`get_address_utxos`, `list_wallet_assets`).
+
+Maestro provides 9× faster multi-address UTxO queries. If `MAESTRO_API_KEY` is not set,
+tools fall back to Blockfrost automatically.
+
+### Kupo (optional, local)
+
+Used by: `indexer` module.
+
+Kupo must be run locally alongside a Cardano node. Set `KUPO_URL` to its HTTP address.
+See the [indexer module docs](/modules/indexer) for setup instructions.
+
+## Rate limiting
+
+The Koios client includes automatic exponential backoff on `429 Too Many Requests`.
+Blockfrost and Maestro rate limits are handled transparently — errors surface as tool
+errors with the original message.

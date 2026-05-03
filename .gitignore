@@ -1,12 +1,37 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
-.env
-*.env.local
-coverage/
-.DS_Store
 *.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# test coverage
+coverage/
+
+# yarn
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editors
+.vscode/
+.idea/
+*.swp
+*.swo

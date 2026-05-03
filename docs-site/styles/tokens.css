@@ -43,4 +43,9 @@
   /* Shadows */
   --ring: 0 0 0 1px var(--line-1);
   --ring-2: 0 0 0 1px var(--line-2);
+
+  /* Brand accent family — all share L=0.78 C=0.16, hue-only variation */
+  --accent-2: oklch(0.78 0.16 165);   /* mint-cyan */
+  --accent-3: oklch(0.78 0.16 295);   /* violet */
+  --grad-brand: linear-gradient(135deg, oklch(0.78 0.16 230), oklch(0.78 0.16 165));
 }

@@ -1,0 +1,45 @@
+import { Callout } from "@/components/Callout";
+
+# Tokens Module
+
+**Phase 1** · 4 tools · Blockfrost + Koios + Maestro
+
+The tokens module handles Cardano native assets and NFTs — no ERC-20 wrapper needed.
+Cardano's ledger supports multi-asset natively at the protocol level.
+
+## Tools
+
+| Tool | API | Description |
+|------|-----|-------------|
+| `get_nft_metadata` | Blockfrost | CIP-25 or CIP-68 NFT metadata |
+| `list_wallet_assets` | Koios/Maestro | All assets held at an address |
+| `build_mint_transaction` | Blockfrost + Mesh | Unsigned mint transaction |
+| `get_policy_assets` | Blockfrost | All assets under a minting policy |
+
+## NFT standards
+
+**CIP-25** — metadata stored in transaction label 721 at mint time. Immutable but widely supported.
+
+**CIP-68** — metadata stored in a reference UTxO. Mutable, supports richer schemas.
+`get_nft_metadata` auto-detects which standard the asset uses.
+
+## Asset identification
+
+Assets are uniquely identified by their **unit**: `policyId + assetName` (hex-encoded).
+
+```
+policyId:  abc123def456...  (56 hex chars)
+assetName: 4d79546f6b656e   (hex-encoded UTF-8 "MyToken")
+unit:      abc123def456...4d79546f6b656e
+```
+
+<Callout type="warn">
+  Asset names in API responses may be hex-encoded. The tools decode them automatically
+  but always verify the display name against the on-chain hex.
+</Callout>
+
+## Minting
+
+`build_mint_transaction` builds an unsigned transaction for native or Plutus minting.
+You provide the policy script, asset name, quantity, and metadata. The tool returns
+CBOR hex for offline signing.

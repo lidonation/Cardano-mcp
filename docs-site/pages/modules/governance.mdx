@@ -1,0 +1,64 @@
+import { Callout } from "@/components/Callout";
+import { KV } from "@/components/KV";
+import { ChainPill } from "@/components/ChainPill";
+
+# Governance Module
+
+**Phase 3** · 12 tools · Koios <ChainPill network="mainnet" label="live" />
+
+Full CIP-1694 on-chain governance. All tools query live mainnet data — governance
+launched with the Plomin Hard Fork in January 2025.
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_governance_proposals` | Active and historical proposals with vote tallies |
+| `get_proposal_details` | Full proposal by CIP-129 bech32 ID |
+| `get_proposal_votes` | All DRep, SPO, CC votes on a proposal |
+| `list_dreps` | Registered DReps with delegation and status |
+| `get_drep_info` | DRep profile, anchor URL, voting history |
+| `get_drep_votes` | All votes cast by a DRep |
+| `get_drep_delegators` | Stake addresses delegated to a DRep |
+| `list_committee_members` | Constitutional Committee with term info |
+| `get_committee_member_votes` | CC member voting history |
+| `get_voter_proposal_votes` | All votes by any voter across proposals |
+| `get_treasury_balance` | Current treasury and reserves in lovelace |
+| `get_constitution` | Current constitution anchor URL and hash |
+
+## CIP-1694 overview
+
+<KV rows={[
+  { k: "DReps", v: "Delegated Representatives — any ada holder can register; stake is delegated to them for off-chain to on-chain voting" },
+  { k: "SPOs", v: "Stake Pool Operators — vote only on hard fork initiations" },
+  { k: "Constitutional Committee", v: "Safeguards the constitution; 7 seats; can vote on all action types" },
+]} />
+
+## Action types
+
+1. **MotionOfNoConfidence** — remove the current Constitutional Committee
+2. **UpdateCommittee** — change CC composition or threshold
+3. **UpdateConstitution** — amend the Cardano constitution
+4. **HardForkInitiation** — trigger a protocol upgrade
+5. **ParameterChange** — modify protocol parameters
+6. **TreasuryWithdrawal** — transfer from treasury to addresses
+7. **InfoAction** — non-binding on-chain signal
+
+<Callout type="ok" title="No API key required">
+  All governance tools use Koios, which is a free, decentralised public API. No
+  registration needed — governance data is available immediately.
+</Callout>
+
+## Proposal IDs
+
+Proposals use CIP-129 bech32 encoding: `gov_action1...`
+
+```
+gov_action1qpqpqpqpqpqpqpq...
+```
+
+Pass these IDs directly to `get_proposal_details` or `get_proposal_votes`.
+
+## DRep IDs
+
+DRep IDs follow CIP-0005: `drep1...` (key hash) or `drep_script1...` (script hash).

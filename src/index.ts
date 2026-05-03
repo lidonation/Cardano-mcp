@@ -21,13 +21,18 @@ registerContractsModule(server);
 registerIndexerModule(server);
 registerGovernanceModule(server);
 
+const BANNER = `
+\x1b[38;2;93;182;255m  ╭───────────────────────────────────────╮\x1b[0m
+\x1b[38;2;93;182;255m  │\x1b[0m  \x1b[1mcardano\x1b[0m\x1b[2m/\x1b[0m\x1b[38;2;63;212;176mmcp\x1b[0m  v0.1.0          \x1b[32mlive\x1b[0m  \x1b[38;2;93;182;255m│\x1b[0m
+\x1b[38;2;93;182;255m  │\x1b[0m  38 tools · 6 modules · CIP-1694    \x1b[38;2;93;182;255m│\x1b[0m
+\x1b[38;2;93;182;255m  ╰───────────────────────────────────────╯\x1b[0m
+`;
+
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  // stderr so it doesn't pollute the MCP stdio protocol
-  process.stderr.write(
-    `Cardano MCP server started (network: ${NETWORK})\n`
-  );
+  process.stderr.write(BANNER);
+  process.stderr.write(`  network: ${NETWORK}\n\n`);
 }
 
 main().catch((e: unknown) => {

@@ -1,0 +1,18 @@
+export default {
+  index: "Overview",
+  "-- getting-started": { type: "separator", title: "Getting Started" },
+  install: "Installation",
+  configure: "Configuration",
+  "claude-desktop": "Claude Desktop",
+  "claude-code": "Claude Code",
+  "first-queries": "First Queries",
+  "-- concepts": { type: "separator", title: "Concepts" },
+  concepts: "eUTxO & Cardano",
+  "-- modules": { type: "separator", title: "Modules" },
+  modules: "Modules",
+  tools: "Tool Explorer",
+  "-- reference": { type: "separator", title: "Reference" },
+  reference: "Reference",
+  recipes: "Recipes",
+  changelog: "Changelog",
+};

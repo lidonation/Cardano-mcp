@@ -1,0 +1,66 @@
+import { Callout } from "@/components/Callout";
+
+# Claude Desktop
+
+Add Cardano MCP to Claude Desktop by editing its configuration file.
+
+## Locate the config file
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
+## Add the server
+
+```json
+{
+  "mcpServers": {
+    "cardano": {
+      "command": "node",
+      "args": ["/absolute/path/to/cardano-mcp/dist/index.js"],
+      "env": {
+        "BLOCKFROST_PROJECT_ID": "mainnetXXXXXXXXXXXXXX",
+        "CARDANO_NETWORK": "mainnet"
+      }
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/cardano-mcp` with the actual path where you cloned the repo.
+
+<Callout type="warn">
+  Always use an **absolute path** in `args`. Relative paths are resolved from Claude Desktop's
+  working directory, which is not your home directory.
+</Callout>
+
+## Restart Claude Desktop
+
+After saving the config file, fully quit and reopen Claude Desktop. You should see
+"cardano" appear in the MCP tools menu.
+
+## Verify
+
+Ask Claude: *"What tools do you have for Cardano?"*
+
+Claude should list all 38 tools across the 6 modules.
+
+## Preprod testnet
+
+For development, use preprod to avoid spending real ADA:
+
+```json
+{
+  "mcpServers": {
+    "cardano": {
+      "command": "node",
+      "args": ["/path/to/cardano-mcp/dist/index.js"],
+      "env": {
+        "BLOCKFROST_PROJECT_ID": "preprodXXXXXXXXXXXXXX",
+        "CARDANO_NETWORK": "preprod"
+      }
+    }
+  }
+}
+```

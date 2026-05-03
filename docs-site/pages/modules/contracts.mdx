@@ -1,0 +1,55 @@
+import { Callout } from "@/components/Callout";
+
+# Contracts Module
+
+**Phase 2** · 7 tools · Blockfrost + Aiken CLI + CSL
+
+The contracts module provides smart contract tooling: CBOR decode/encode, Aiken
+validation, script inspection, and validator scaffolding. `decode_cbor_datum` is the
+single most important tool for debugging Cardano smart contracts.
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `explain_eutxo_model` | Inject bundled eUTxO explainer into Claude's context |
+| `get_aiken_stdlib_docs` | Bundled Aiken standard library reference |
+| `validate_aiken_snippet` | Run `aiken check` on a validator snippet |
+| `get_script_info` | Script type, size, CBOR, and reference UTxOs |
+| `decode_cbor_datum` | Decode raw CBOR hex to readable JSON |
+| `scaffold_validator` | Generate Aiken scaffold for escrow/vesting/NFT patterns |
+| `encode_plutus_data` | Encode JSON Plutus data back to CBOR hex |
+
+## CBOR datum decoding
+
+Datums are stored as raw CBOR on-chain. Without decoding, they look like:
+
+```
+d87980
+```
+
+After `decode_cbor_datum`:
+
+```json
+{ "constructor": 0, "fields": [] }
+```
+
+This is the #1 AI agent pain point on Cardano. The tool uses the Cardano Serialization
+Library (CSL v12) for accurate decoding of all Plutus data types.
+
+<Callout type="info">
+  Always decode datums before trying to reason about smart contract state.
+  Raw CBOR hex is uninterpretable without this step.
+</Callout>
+
+## Aiken validation
+
+`validate_aiken_snippet` shells out to `aiken check`. Requires Aiken CLI to be
+installed: `curl -sSfL https://install.aiken-lang.org | sh`
+
+## Scaffold patterns
+
+`scaffold_validator` generates production-ready Aiken code for:
+- `escrow` — two-party escrow with dispute resolution
+- `vesting` — time-locked funds release
+- `nft-gate` — NFT ownership access control

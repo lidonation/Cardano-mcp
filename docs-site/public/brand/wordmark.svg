@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 24" fill="none">
+  <text x="0" y="18"
+    font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
+    font-size="18" font-weight="600" letter-spacing="-0.01em"
+    fill="oklch(0.97 0.005 250)">cardano</text>
+  <text x="82" y="18"
+    font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
+    font-size="18" font-weight="400"
+    fill="oklch(0.42 0.012 250)">/</text>
+  <text x="96" y="18"
+    font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
+    font-size="18" font-weight="400"
+    fill="oklch(0.70 0.010 250)">mcp</text>
+</svg>

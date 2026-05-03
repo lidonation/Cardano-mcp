@@ -1,0 +1,87 @@
+import { Callout } from "@/components/Callout";
+
+# Reference
+
+## Tool return format
+
+All tools return a consistent MCP content structure:
+
+```typescript
+{
+  content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+}
+```
+
+On error:
+
+```typescript
+{
+  content: [{ type: "text", text: "Error: <message>" }],
+  isError: true
+}
+```
+
+Claude parses the JSON automatically and reasons about the result.
+
+## API providers
+
+| Provider | Used by | Auth | Free tier |
+|----------|---------|------|-----------|
+| Blockfrost | query, tokens, txbuilder, contracts | `project_id` header | 50k req/day |
+| Koios | query, tokens, governance | None | Unlimited |
+| Maestro | query (UTxO) | `api-key` header | 1M compute units/month |
+| Kupo | indexer | None (local) | Self-hosted |
+| Yaci Store | indexer | None (local) | Self-hosted |
+
+## Encoding utilities
+
+### Lovelace to ADA
+
+```typescript
+import { lovelaceToAda } from "./config.js";
+lovelaceToAda(2000000n) // → "2.000000"
+```
+
+### Decode CBOR datum
+
+```
+decode_cbor_datum({ datum: "d87980" })
+// → { "constructor": 0, "fields": [] }
+```
+
+### Encode Plutus data
+
+```
+encode_plutus_data({ data: { constr_index: 0, fields: [] } })
+// → "d87980"
+```
+
+## Error codes
+
+| Error | Cause |
+|-------|-------|
+| `404 Not Found` | Address/tx/asset does not exist on the selected network |
+| `402 Usage limit reached` | Blockfrost daily limit exceeded |
+| `429 Too Many Requests` | Rate limited — Koios client retries automatically |
+| `CBOR decode error` | Malformed or non-Plutus CBOR datum |
+| `aiken not found` | Aiken CLI not installed — needed for validate_aiken_snippet |
+
+## TypeScript types
+
+All shared types are in `src/types/cardano.ts`:
+
+```typescript
+interface UTxO {
+  txHash: string;
+  outputIndex: number;
+  address: string;
+  amount: { unit: string; quantity: string }[];
+  dataHash?: string;
+  inlineDatum?: unknown;
+}
+```
+
+<Callout type="info">
+  The full type definitions are the authoritative reference — they match exactly
+  what the API clients return and what the tools expose.
+</Callout>

@@ -1,0 +1,68 @@
+import { Callout } from "@/components/Callout";
+
+# Claude Code
+
+Add Cardano MCP to Claude Code (the CLI) with a single command.
+
+## Add via CLI
+
+```bash
+claude mcp add cardano -- node /absolute/path/to/cardano-mcp/dist/index.js
+```
+
+Then set environment variables:
+
+```bash
+claude mcp edit cardano
+```
+
+Or add directly to `.claude/mcp.json` in your project root:
+
+```json
+{
+  "cardano": {
+    "command": "node",
+    "args": ["/absolute/path/to/cardano-mcp/dist/index.js"],
+    "env": {
+      "BLOCKFROST_PROJECT_ID": "mainnetXXXXXXXXXXXXXX",
+      "CARDANO_NETWORK": "mainnet"
+    }
+  }
+}
+```
+
+## Per-project config
+
+For team projects, commit an `.mcp.json` at the repo root so every developer
+gets the same MCP setup automatically:
+
+```json
+{
+  "mcpServers": {
+    "cardano": {
+      "command": "node",
+      "args": ["../../cardano-mcp/dist/index.js"],
+      "env": {
+        "CARDANO_NETWORK": "preprod"
+      }
+    }
+  }
+}
+```
+
+<Callout type="info">
+  The `BLOCKFROST_PROJECT_ID` should be set in each developer's shell environment
+  (e.g. `.zshrc`) rather than committed to the project config, since project IDs
+  are considered credentials.
+</Callout>
+
+## Verify
+
+```bash
+claude --print "List the Cardano MCP tools available"
+```
+
+## IDE extensions
+
+The same `.claude/mcp.json` config is picked up by the Claude VS Code and JetBrains
+extensions automatically — no extra setup needed.

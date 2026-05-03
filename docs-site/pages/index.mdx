@@ -1,0 +1,41 @@
+import { Hero } from "@/components/Hero";
+import { ModuleGrid } from "@/components/ModuleGrid";
+import { Callout } from "@/components/Callout";
+
+<Hero />
+
+## What is Cardano MCP?
+
+Cardano MCP is an [MCP server](https://modelcontextprotocol.io) that gives Claude — and
+any MCP-compatible AI agent — deep, idiomatic access to the Cardano blockchain.
+
+Solana has 40+ MCPs. EVM has 30+. Cardano had nothing dedicated. Until now.
+
+## Six modules. 38 tools.
+
+<ModuleGrid />
+
+## Why Cardano needs its own MCP
+
+Cardano's eUTxO model is fundamentally different from Ethereum's account model.
+There are no balances — only UTxOs. Smart contracts are validators, not code runners.
+Datums carry state, not contracts. Amounts are always in lovelace.
+
+Generic blockchain MCPs get this wrong. Cardano MCP is purpose-built around the
+correct mental model, so Claude never confuses addresses for accounts or ADA for wei.
+
+<Callout type="ok" title="Governance is live">
+  CIP-1694 on-chain governance launched on mainnet with the Plomin Hard Fork (January 2025).
+  All 12 governance tools work against mainnet today.
+</Callout>
+
+## Quick start
+
+```bash
+npm install -g cardano-mcp
+# or clone and build locally
+git clone https://github.com/your-org/cardano-mcp
+cd cardano-mcp && pnpm install && pnpm build
+```
+
+Then add to Claude Desktop or Claude Code — see [Installation](/install).

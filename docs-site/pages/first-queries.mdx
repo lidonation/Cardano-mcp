@@ -1,0 +1,76 @@
+import { Callout } from "@/components/Callout";
+
+# First Queries
+
+Try these prompts with Claude once the MCP server is connected.
+
+## Fetch UTxOs at an address
+
+```
+What UTxOs are at addr1qxy...?
+```
+
+Claude will call `get_address_utxos` and return a structured list showing each
+UTxO's transaction hash, output index, lovelace amount, and any native assets.
+
+## Check a transaction
+
+```
+Decode this transaction for me: abc123def456...
+```
+
+Claude calls `get_tx_details` to show all inputs, outputs, fees, and metadata.
+
+## Look up an NFT
+
+```
+What's the metadata for asset abc123.4d79546f6b656e?
+```
+
+Claude calls `get_nft_metadata` which returns CIP-25 or CIP-68 metadata including
+name, image IPFS hash, attributes, and minting policy details.
+
+## Decode a Plutus datum
+
+```
+Decode this CBOR datum: d87980...
+```
+
+This is the most powerful tool. Claude calls `decode_cbor_datum` using the Cardano
+Serialization Library to turn raw hex into readable JSON — essential for debugging
+smart contract state.
+
+<Callout type="info" title="The eUTxO model matters">
+  If Claude seems confused about Cardano concepts, ask it to run
+  `explain_eutxo_model` first. This injects the bundled context document that
+  corrects common misconceptions about the UTxO model vs. the account model.
+</Callout>
+
+## Governance
+
+```
+What governance proposals are currently active on Cardano mainnet?
+```
+
+Claude calls `list_governance_proposals` via Koios and returns CIP-129 proposal
+IDs, action types, deposit amounts, and current vote tallies.
+
+```
+How has DRep drep1abc... voted?
+```
+
+Claude calls `get_drep_votes` to show the DRep's full voting history with rationale URLs.
+
+## Build a transaction
+
+```
+Build a payment transaction sending 5 ADA from addr1... to addr1...
+```
+
+Claude calls `get_protocol_params`, then `build_payment_tx` via Mesh SDK.
+It returns the unsigned CBOR transaction hex for you to sign with your wallet.
+
+<Callout type="warn">
+  Never share your **signing key** with Claude. Always sign transactions offline
+  using your wallet software. Claude builds unsigned transactions only.
+</Callout>

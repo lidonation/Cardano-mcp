@@ -1,0 +1,45 @@
+import { Callout } from "@/components/Callout";
+
+# Tx Builder Module
+
+**Phase 1** · 5 tools · Blockfrost + Mesh SDK
+
+Build, calculate, and submit Cardano transactions. Uses Mesh SDK's `MeshTxBuilder`
+for correct UTxO selection, fee calculation, and transaction serialization.
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_protocol_params` | Current epoch parameters (fees, execution prices) |
+| `calculate_min_ada` | Minimum ADA for a UTxO with native assets |
+| `build_payment_tx` | Unsigned ADA payment transaction |
+| `build_smart_contract_tx` | Unsigned Plutus contract interaction |
+| `submit_transaction` | Submit signed CBOR tx to the network |
+
+## Transaction lifecycle
+
+1. `get_protocol_params` — fetch current fee coefficients
+2. `build_payment_tx` or `build_smart_contract_tx` — build unsigned CBOR
+3. Sign offline with your wallet (never share keys with Claude)
+4. `submit_transaction` — broadcast to the network
+
+<Callout type="warn" title="Never share signing keys">
+  Claude builds **unsigned** transactions. The CBOR hex returned by build tools
+  must be signed offline using your hardware wallet, browser wallet, or CLI.
+  Never provide private keys or mnemonics to Claude.
+</Callout>
+
+## Smart contract transactions
+
+`build_smart_contract_tx` requires:
+- `scriptCbor` — the compiled Plutus script (hex)
+- `scriptAddress` — the script's bech32 address
+- `datum` — the datum at the UTxO being spent (JSON)
+- `redeemer` — the redeemer to provide (JSON)
+- `collateral` — a UTxO to use as collateral (required for Plutus)
+
+## Min ADA
+
+Native assets add overhead to UTxOs. `calculate_min_ada` computes the minimum lovelace
+required to satisfy the ledger's minimum UTxO value constraint given a set of assets.

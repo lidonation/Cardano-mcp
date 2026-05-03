@@ -1,0 +1,85 @@
+import { Callout } from "@/components/Callout";
+
+# Recipes
+
+Common multi-step workflows you can run with Claude.
+
+## Check a wallet balance
+
+```
+What is the ADA balance and all assets held at addr1qxy...?
+```
+
+Claude will:
+1. Call `get_address_utxos` to fetch all UTxOs
+2. Sum lovelace across UTxOs and convert to ADA
+3. Aggregate native assets by policy ID
+
+## Debug a smart contract failure
+
+```
+Transaction abc123 failed. The script is at addr1... — what went wrong?
+```
+
+Claude will:
+1. Call `get_tx_details` to inspect inputs/outputs
+2. Call `get_script_info` for the contract
+3. Call `decode_cbor_datum` on the datum and redeemer
+4. Cross-reference with `explain_eutxo_model` context
+
+## Mint an NFT
+
+```
+Build a transaction to mint an NFT with name "My NFT", policy abc123, 
+from address addr1... with metadata { image: "ipfs://..." }
+```
+
+Claude will:
+1. Call `get_protocol_params` for fee calculation
+2. Call `build_mint_transaction` via Mesh SDK
+3. Return unsigned CBOR tx hex for wallet signing
+
+## Analyze governance participation
+
+```
+Show me all active governance proposals and how DRep drep1abc... voted on each
+```
+
+Claude will:
+1. Call `list_governance_proposals` with status "active"
+2. Call `get_drep_votes` for the specified DRep
+3. Cross-reference and summarize voting alignment
+
+## Watch an address for new UTxOs
+
+```
+Watch address addr1... for incoming UTxOs and alert me
+```
+
+Claude will call `watch_address` to register a Kupo pattern, then `query_kupo_matches`
+to check for matches.
+
+<Callout type="info">
+  These recipes work best when you give Claude the full bech32 address or transaction hash.
+  Claude can also look these up from partial information when possible.
+</Callout>
+
+## Find all NFTs in a wallet
+
+```
+What NFTs does addr1... hold? Show me the CIP-25 metadata for each.
+```
+
+Claude will:
+1. Call `list_wallet_assets` for all assets
+2. Filter by known NFT policies or single-quantity assets
+3. Call `get_nft_metadata` for each to retrieve CIP-25/68 metadata
+
+## Scaffold a vesting contract
+
+```
+Generate an Aiken vesting contract that releases funds to addr1... after slot 12345678
+```
+
+Claude will call `scaffold_validator` with `pattern: "vesting"` and the provided
+parameters, returning a complete Aiken `.ak` file ready to compile.

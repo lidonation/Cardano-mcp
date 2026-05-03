@@ -1,0 +1,36 @@
+# Changelog
+
+## v0.1.0 — Initial release
+
+**Released:** 2025-05
+
+### Added
+
+- **`query` module** — 6 tools: `get_address_utxos`, `get_tx_details`, `get_asset_info`,
+  `get_block_info`, `query_address_history`, `get_network_info`
+- **`tokens` module** — 4 tools: `get_nft_metadata`, `list_wallet_assets`,
+  `build_mint_transaction`, `get_policy_assets`
+- **`txbuilder` module** — 5 tools: `get_protocol_params`, `calculate_min_ada`,
+  `build_payment_tx`, `build_smart_contract_tx`, `submit_transaction`
+- **`contracts` module** — 7 tools including `decode_cbor_datum` and `encode_plutus_data`
+  backed by Cardano Serialization Library v12
+- **`indexer` module** — 4 tools via Kupo and Yaci Store
+- **`governance` module** — 12 tools for full CIP-1694 governance: proposals, DReps, SPOs,
+  Constitutional Committee
+- Koios API client with exponential backoff retry on 429
+- Blockfrost client with network-aware base URLs
+- Maestro client for high-performance UTxO queries
+- Bundled resource context: eUTxO explainer, governance explainer, Aiken stdlib reference
+- Full vitest test suite — 39 tests across all modules
+
+### Architecture
+
+- TypeScript strict mode throughout
+- Zod v4 schemas for all tool inputs
+- MCP SDK `@modelcontextprotocol/sdk` latest
+- Mesh SDK `@meshsdk/core` for transaction building
+- All tools return structured JSON — parseable by Claude
+
+---
+
+*Future releases will be documented here.*

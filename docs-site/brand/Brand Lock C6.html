@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cardano/mcp · Brand Lock — C6</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg-0: oklch(0.14 0.012 250);
+  --bg-1: oklch(0.165 0.014 250);
+  --bg-2: oklch(0.195 0.014 250);
+  --bg-light: oklch(0.97 0.005 250);
+  --fg-0: oklch(0.97 0.005 250);
+  --fg-1: oklch(0.88 0.008 250);
+  --fg-2: oklch(0.70 0.010 250);
+  --fg-3: oklch(0.55 0.012 250);
+  --fg-4: oklch(0.42 0.012 250);
+  --line-1: oklch(0.27 0.014 250);
+  --line-2: oklch(0.32 0.014 250);
+  --accent: oklch(0.78 0.16 230);
+  --accent-2: oklch(0.78 0.16 195);
+  --accent-soft: oklch(0.78 0.16 230 / 0.16);
+  --accent-line: oklch(0.78 0.16 230 / 0.45);
+  --grad: linear-gradient(135deg, oklch(0.78 0.16 230), oklch(0.78 0.16 195));
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg-0); color: var(--fg-1); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.page { max-width: 1280px; margin: 0 auto; padding: 56px 32px 140px; }
+.head { padding-bottom: 28px; border-bottom: 1px solid var(--line-1); margin-bottom: 56px; }
+.eyebrow { display: inline-flex; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); padding: 4px 11px; border-radius: 999px; letter-spacing: 0.04em; align-items: center; }
+.eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+h1 { font-size: 38px; font-weight: 600; letter-spacing: -0.025em; margin: 16px 0 8px; color: var(--fg-0); }
+.sub { color: var(--fg-2); max-width: 640px; margin: 0; font-size: 15px; line-height: 1.55; }
+.section-title { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); letter-spacing: 0.08em; text-transform: uppercase; margin: 64px 0 18px; padding-bottom: 10px; border-bottom: 1px dashed var(--line-1); display: flex; justify-content: space-between; align-items: baseline; }
+.section-title small { font-family: var(--font-mono); font-size: 11px; color: var(--fg-4); letter-spacing: 0.04em; text-transform: none; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.card { background: var(--bg-1); border: 1px solid var(--line-1); border-radius: 16px; overflow: hidden; }
+.stage { display: grid; place-items: center; padding: 36px; min-height: 220px; background:
+   radial-gradient(circle at 50% 60%, oklch(0.78 0.16 230 / 0.06), transparent 60%),
+   repeating-linear-gradient(45deg, transparent 0 7px, oklch(0.78 0.16 230 / 0.025) 7px 8px),
+   var(--bg-1);
+}
+.stage.light { background:
+   radial-gradient(circle at 50% 60%, oklch(0.78 0.16 230 / 0.10), transparent 60%),
+   repeating-linear-gradient(45deg, transparent 0 7px, oklch(0.78 0.16 230 / 0.04) 7px 8px),
+   var(--bg-light);
+   color: var(--bg-0);
+}
+.foot { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--line-1); }
+.id { font-family: var(--font-mono); font-size: 11px; color: var(--accent); padding: 2px 8px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; }
+.name { font-family: var(--font-mono); font-size: 13px; color: var(--fg-0); font-weight: 500; }
+.desc { color: var(--fg-2); font-size: 12.5px; margin-left: auto; text-align: right; max-width: 360px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; }
+.hero-stage { padding: 56px 48px; min-height: 320px; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+.lockup-xl { display: flex; align-items: center; gap: 22px; font-family: var(--font-mono); font-size: 38px; color: var(--fg-0); letter-spacing: -0.02em; }
+.lockup-xl .sl { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lockup-xl .tg { color: var(--fg-2); }
+.tag { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* sizes */
+.sizes { display: flex; align-items: center; gap: 36px; padding: 24px; flex-wrap: wrap; justify-content: center; }
+.sz { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.sz code { font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-3); }
+
+/* anim mark — keep one set of keyframes */
+@keyframes flow { 0%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-12;} }
+.flow-line { stroke-dasharray: 4 2; animation: flow 1.6s linear infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* construction */
+.construct { padding: 24px; display: grid; place-items: center; }
+.construct svg { background:
+  linear-gradient(to right, oklch(0.78 0.16 230 / 0.10) 1px, transparent 1px) 0 0/8px 100%,
+  linear-gradient(to bottom, oklch(0.78 0.16 230 / 0.10) 1px, transparent 1px) 0 0/100% 8px,
+  var(--bg-2);
+  border-radius: 8px;
+}
+
+/* OG card */
+.og-card { aspect-ratio: 1200/630; background:
+  radial-gradient(ellipse at 30% 40%, oklch(0.78 0.16 230 / 0.32), transparent 55%),
+  radial-gradient(ellipse at 78% 78%, oklch(0.78 0.16 195 / 0.20), transparent 55%),
+  oklch(0.13 0.014 250);
+  border: 1px solid var(--line-2); border-radius: 16px; padding: 56px 64px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+}
+.og-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(45deg, transparent 0 22px, oklch(0.78 0.16 230 / 0.025) 22px 23px);
+}
+.og-top { display: flex; align-items: center; gap: 18px; }
+.og-mark { width: 64px; height: 64px; color: var(--fg-0); }
+.og-word { font-family: var(--font-mono); font-size: 30px; color: var(--fg-0); letter-spacing: -0.01em; }
+.og-word .sl { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.og-word .tg { color: var(--fg-2); }
+.og-headline { font-size: 60px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--fg-0); max-width: 880px; margin: 0; }
+.og-headline em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.og-foot { display: flex; gap: 14px; align-items: center; font-family: var(--font-mono); font-size: 14px; color: var(--fg-2); position: relative; z-index: 1;}
+.og-pill { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--accent-line); color: var(--accent); background: var(--accent-soft); font-size: 12px; }
+
+/* avatar */
+.avatar { width: 200px; height: 200px; border-radius: 44px; background:
+   radial-gradient(circle at 35% 35%, oklch(0.78 0.16 230 / 0.45), transparent 65%),
+   linear-gradient(135deg, oklch(0.18 0.014 250), oklch(0.13 0.014 250));
+   border: 1px solid var(--line-2);
+   display: grid; place-items: center; box-shadow: 0 30px 60px -20px oklch(0.05 0.014 250 / 0.6);
+}
+
+/* terminal-ish boot card */
+.boot { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-1); padding: 22px; background: oklch(0.115 0.012 250); }
+.boot .dim { color: var(--fg-3); }
+.boot .ac { color: var(--accent); }
+.boot pre { margin: 0; line-height: 1.55; white-space: pre-wrap; }
+
+/* notes / rule cards */
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rule { padding: 22px; min-height: 200px; display: flex; flex-direction: column; gap: 10px; }
+.rule .label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; }
+.rule.do .label { color: oklch(0.78 0.14 155); }
+.rule.dont .label { color: oklch(0.72 0.16 25); }
+.rule h4 { font-size: 16px; margin: 0; color: var(--fg-0); font-weight: 500; }
+.rule p { color: var(--fg-2); margin: 0; font-size: 13px; line-height: 1.55; }
+
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+
+<!-- Animated mark (canonical) -->
+<symbol id="mark-anim" viewBox="0 0 64 64">
+  <circle cx="14" cy="32" r="5" fill="oklch(0.78 0.16 230)" />
+  <path class="flow-line" d="M 19 32 Q 32 32 42 18" fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round" />
+  <path class="flow-line" d="M 19 32 L 42 32"      fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round" style="animation-delay:-0.5s;" />
+  <path class="flow-line" d="M 19 32 Q 32 32 42 46" fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round" style="animation-delay:-1s;"/>
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+</symbol>
+
+<!-- Static fallback (C1) for surfaces that don't allow motion -->
+<symbol id="mark-static" viewBox="0 0 64 64">
+  <circle cx="14" cy="32" r="5" fill="oklch(0.78 0.16 230)" />
+  <path d="M 19 32 Q 32 32 42 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 L 42 32"      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 Q 32 32 42 46" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+</symbol>
+
+<!-- Mono · all one color (for single-color print, embroidery, etc) -->
+<symbol id="mark-mono" viewBox="0 0 64 64">
+  <circle cx="14" cy="32" r="5" fill="currentColor" />
+  <path d="M 19 32 Q 32 32 42 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 L 42 32"      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 Q 32 32 42 46" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+</symbol>
+
+<!-- Construction grid version (with helper guides) -->
+<symbol id="mark-grid" viewBox="0 0 64 64">
+  <!-- guides -->
+  <circle cx="14" cy="32" r="9" fill="none" stroke="oklch(0.78 0.16 230 / 0.4)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <circle cx="46" cy="18" r="6" fill="none" stroke="oklch(0.78 0.16 230 / 0.4)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <circle cx="46" cy="32" r="6" fill="none" stroke="oklch(0.78 0.16 230 / 0.4)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <circle cx="46" cy="46" r="6" fill="none" stroke="oklch(0.78 0.16 230 / 0.4)" stroke-width="0.5" stroke-dasharray="2 2"/>
+  <line x1="14" y1="32" x2="46" y2="18" stroke="oklch(0.78 0.16 230 / 0.3)" stroke-width="0.4" stroke-dasharray="2 2"/>
+  <line x1="14" y1="32" x2="46" y2="32" stroke="oklch(0.78 0.16 230 / 0.3)" stroke-width="0.4" stroke-dasharray="2 2"/>
+  <line x1="14" y1="32" x2="46" y2="46" stroke="oklch(0.78 0.16 230 / 0.3)" stroke-width="0.4" stroke-dasharray="2 2"/>
+  <!-- mark -->
+  <circle cx="14" cy="32" r="5" fill="oklch(0.78 0.16 230)" />
+  <path d="M 19 32 Q 32 32 42 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 L 42 32"      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <path d="M 19 32 Q 32 32 42 46" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2" />
+</symbol>
+
+</defs>
+</svg>
+
+<div class="page">
+
+<header class="head">
+  <span class="eyebrow"><span class="dot"></span>locked · cardano/mcp · v1</span>
+  <h1>The mark with a heartbeat</h1>
+  <p class="sub">
+    A single root node fans into three. In live surfaces, data pulses outward —
+    the eUTxO model in motion. In static surfaces (favicons, print, OG card),
+    the same silhouette holds without animation.
+  </p>
+</header>
+
+<!-- HERO LOCKUP -->
+<div class="grid-2">
+  <div class="card">
+    <div class="stage hero-stage">
+      <div class="lockup-xl">
+        <svg width="80" height="80" style="color: var(--fg-0);"><use href="#mark-anim"/></svg>
+        <span><strong>cardano</strong><span class="sl">/</span><span class="tg">mcp</span></span>
+      </div>
+      <div class="tag">primary lockup · animated · dark surface</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stage light hero-stage">
+      <div class="lockup-xl" style="color: oklch(0.20 0.014 250);">
+        <svg width="80" height="80" style="color: oklch(0.20 0.014 250);"><use href="#mark-anim"/></svg>
+        <span style="color: oklch(0.20 0.014 250);"><strong>cardano</strong><span class="sl">/</span><span style="color: oklch(0.42 0.012 250);">mcp</span></span>
+      </div>
+      <div class="tag" style="color: oklch(0.42 0.012 250);">primary lockup · animated · light surface</div>
+    </div>
+  </div>
+</div>
+
+<!-- THE MARK -->
+<div class="section-title">The mark · variants <small>animated · static · mono · construction</small></div>
+
+<div class="grid-4">
+  <div class="card">
+    <div class="stage" style="min-height:180px;"><svg width="100" height="100" style="color: var(--fg-0);"><use href="#mark-anim"/></svg></div>
+    <div class="foot"><span class="id">A</span><span class="name">animated</span></div>
+  </div>
+  <div class="card">
+    <div class="stage" style="min-height:180px;"><svg width="100" height="100" style="color: var(--fg-0);"><use href="#mark-static"/></svg></div>
+    <div class="foot"><span class="id">B</span><span class="name">static fallback</span></div>
+  </div>
+  <div class="card">
+    <div class="stage" style="min-height:180px;"><svg width="100" height="100" style="color: var(--fg-0);"><use href="#mark-mono"/></svg></div>
+    <div class="foot"><span class="id">C</span><span class="name">mono · 1-color</span></div>
+  </div>
+  <div class="card">
+    <div class="construct"><svg width="180" height="180" style="color: var(--fg-0);"><use href="#mark-grid"/></svg></div>
+    <div class="foot"><span class="id">D</span><span class="name">construction · 64u</span></div>
+  </div>
+</div>
+
+<!-- SIZE STRIP -->
+<div class="section-title">Sizes <small>animated mark holds down to 24px · static below</small></div>
+<div class="card">
+  <div class="sizes">
+    <div class="sz"><svg width="96" height="96" style="color: var(--fg-0);"><use href="#mark-anim"/></svg><code>96 · header</code></div>
+    <div class="sz"><svg width="64" height="64" style="color: var(--fg-0);"><use href="#mark-anim"/></svg><code>64 · readme</code></div>
+    <div class="sz"><svg width="48" height="48" style="color: var(--fg-0);"><use href="#mark-anim"/></svg><code>48 · nav</code></div>
+    <div class="sz"><svg width="32" height="32" style="color: var(--fg-0);"><use href="#mark-anim"/></svg><code>32 · sidebar</code></div>
+    <div class="sz"><svg width="24" height="24" style="color: var(--fg-0);"><use href="#mark-anim"/></svg><code>24 · inline</code></div>
+    <div class="sz"><svg width="20" height="20" style="color: var(--fg-0);"><use href="#mark-static"/></svg><code>20 · favicon</code></div>
+    <div class="sz"><svg width="16" height="16" style="color: var(--fg-0);"><use href="#mark-static"/></svg><code>16 · favicon</code></div>
+  </div>
+</div>
+
+<!-- BRAND SURFACES -->
+<div class="section-title">Brand surfaces <small>OG card · README banner · avatar · boot</small></div>
+
+<div class="grid-2" style="margin-bottom:14px;">
+  <!-- OG CARD -->
+  <div class="card" style="grid-column: span 2;">
+    <div style="padding: 22px;">
+      <div class="og-card">
+        <div class="og-top">
+          <svg class="og-mark"><use href="#mark-anim"/></svg>
+          <span class="og-word"><strong>cardano</strong><span class="sl">/</span><span class="tg">mcp</span></span>
+        </div>
+        <h2 class="og-headline">A <em>Model Context Protocol</em><br/>server for the Cardano ledger.</h2>
+        <div class="og-foot">
+          <span class="og-pill">v0.4 · phase 2</span>
+          <span>github.com/Emmanuel-Tyty/Cardano-mcp</span>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="id">og</span><span class="name">opengraph · 1200 × 630</span><span class="desc">Ships as static PNG; flow lines render at capture time.</span></div>
+  </div>
+</div>
+
+<div class="grid-3">
+  <!-- AVATAR -->
+  <div class="card">
+    <div class="stage" style="min-height:280px;">
+      <div class="avatar">
+        <svg width="110" height="110" style="color: var(--fg-0);"><use href="#mark-anim"/></svg>
+      </div>
+    </div>
+    <div class="foot"><span class="id">av</span><span class="name">social avatar · 512²</span></div>
+  </div>
+
+  <!-- README banner mini -->
+  <div class="card">
+    <div class="stage" style="min-height:280px; padding: 24px;">
+      <div style="width:100%; aspect-ratio: 1280/360; background:
+        radial-gradient(ellipse at 18% 50%, oklch(0.78 0.16 230 / 0.30), transparent 55%),
+        linear-gradient(135deg, oklch(0.16 0.014 250), oklch(0.12 0.014 250));
+        border: 1px solid var(--line-2); border-radius: 10px; padding: 28px 36px;
+        display: flex; align-items: center; gap: 22px;">
+        <svg width="56" height="56" style="color: var(--fg-0); flex-shrink: 0;"><use href="#mark-anim"/></svg>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 22px; color: var(--fg-0);"><strong>cardano</strong><span style="background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;">/</span><span style="color: var(--fg-2);">mcp</span></div>
+          <div style="color: var(--fg-3); font-size: 12px; margin-top: 4px;">Model Context Protocol server for Cardano</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="id">rb</span><span class="name">readme banner</span></div>
+  </div>
+
+  <!-- BOOT -->
+  <div class="card">
+    <div class="boot" style="min-height:280px;">
+<pre>  <span class="ac">●</span>──○
+   <span class="dim">○</span>
+   ○   <span class="dim">cardano/mcp</span>
+       <span class="dim">v0.4.1 · phase 2</span>
+
+  <span class="ac">▸</span> stdio transport ready
+  <span class="ac">▸</span> 28 tools registered
+  <span class="ac">▸</span> network: <span class="ac">mainnet</span>
+  <span class="dim">  epoch 502 · slot 138429112</span>
+
+  <span class="dim">listening on stdin…</span>
+</pre>
+    </div>
+    <div class="foot"><span class="id">tt</span><span class="name">terminal · boot banner</span></div>
+  </div>
+</div>
+
+<!-- FAVICON STRIP -->
+<div class="section-title">Favicon · render set <small>16 · 32 · 48 · 180 · 192 · 512</small></div>
+<div class="card">
+  <div class="sizes" style="gap: 28px;">
+    <div class="sz">
+      <div style="width:16px;height:16px;background:#0b1623;border-radius:3px;display:grid;place-items:center;">
+        <svg width="14" height="14" style="color:#fff;"><use href="#mark-static"/></svg>
+      </div>
+      <code>16 · ico</code>
+    </div>
+    <div class="sz">
+      <div style="width:32px;height:32px;background:#0b1623;border-radius:6px;display:grid;place-items:center;">
+        <svg width="26" height="26" style="color:#fff;"><use href="#mark-static"/></svg>
+      </div>
+      <code>32 · ico</code>
+    </div>
+    <div class="sz">
+      <div style="width:48px;height:48px;background:#0b1623;border-radius:9px;display:grid;place-items:center;">
+        <svg width="38" height="38" style="color:#fff;"><use href="#mark-static"/></svg>
+      </div>
+      <code>48 · ico</code>
+    </div>
+    <div class="sz">
+      <div style="width:90px;height:90px;background:#0b1623;border-radius:18px;display:grid;place-items:center;">
+        <svg width="68" height="68" style="color:#fff;"><use href="#mark-static"/></svg>
+      </div>
+      <code>180 · apple-touch</code>
+    </div>
+    <div class="sz">
+      <div style="width:96px;height:96px;background:#0b1623;border-radius:20px;display:grid;place-items:center;">
+        <svg width="74" height="74" style="color:#fff;"><use href="#mark-static"/></svg>
+      </div>
+      <code>192 · pwa</code>
+    </div>
+    <div class="sz">
+      <div style="width:128px;height:128px;background:linear-gradient(135deg,#0e1a2a,#0a1320);border-radius:28px;display:grid;place-items:center;border:1px solid var(--line-1);">
+        <svg width="92" height="92" style="color:#fff;"><use href="#mark-anim"/></svg>
+      </div>
+      <code>512 · pwa</code>
+    </div>
+  </div>
+</div>
+
+<!-- USAGE RULES -->
+<div class="section-title">Usage rules</div>
+<div class="rules">
+  <div class="card rule do">
+    <div class="label">DO · clear-space</div>
+    <h4>Reserve 1× root-radius around the mark.</h4>
+    <p>Padding = the radius of the filled root dot. At 64u that's 5u of breathing room on every side. Anchor lockups against this same gutter.</p>
+  </div>
+  <div class="card rule dont">
+    <div class="label">DON'T · alter motion</div>
+    <h4>Never change the flow direction.</h4>
+    <p>Data flows root → leaves. Reversing the dash animation breaks the eUTxO metaphor. If you can't render motion, drop in the static fallback — never mix the two.</p>
+  </div>
+  <div class="card rule do">
+    <div class="label">DO · solo color</div>
+    <h4>Brand blue for the root and flow lines.</h4>
+    <p>Leaves stay neutral (currentColor) so the mark inherits foreground in any context. Only the root dot + the three flow paths carry the accent.</p>
+  </div>
+  <div class="card rule dont">
+    <div class="label">DON'T · place on busy ground</div>
+    <h4>The flow lines need a calm surface.</h4>
+    <p>Avoid photographs or high-contrast textures behind the mark. If unavoidable, place it on a 16-radius squircle plate first.</p>
+  </div>
+</div>
+
+<!-- TOKENS -->
+<div class="section-title">Tokens <small>copy-paste into <code style="color:var(--accent);font-family:var(--font-mono);">tokens.css</code></small></div>
+<div class="card">
+  <div class="boot" style="background: var(--bg-1);">
+<pre>:root {
+  <span class="dim">/* core */</span>
+  --bg-0:        oklch(0.14 0.012 250);
+  --bg-1:        oklch(0.165 0.014 250);
+  --fg-0:        oklch(0.97 0.005 250);
+  --fg-2:        oklch(0.70 0.010 250);
+  --line-1:      oklch(0.27 0.014 250);
+
+  <span class="dim">/* signature */</span>
+  --accent:      <span class="ac">oklch(0.78 0.16 230)</span>;   <span class="dim">/* root + flow */</span>
+  --accent-2:    <span class="ac">oklch(0.78 0.16 195)</span>;   <span class="dim">/* gradient terminal */</span>
+  --grad-brand:  linear-gradient(135deg, var(--accent), var(--accent-2));
+
+  <span class="dim">/* type */</span>
+  --font-sans:   "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:   "Geist Mono", ui-monospace, Menlo, monospace;
+}
+
+<span class="dim">/* canonical mark animation */</span>
+@keyframes flow { 0%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-12;} }
+.cm-flow { stroke-dasharray: 4 2; animation: flow 1.6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .cm-flow { animation: none; } }
+</pre>
+  </div>
+</div>
+
+<p style="color: var(--fg-3); font-size: 12.5px; margin-top: 32px; max-width: 720px; line-height: 1.7;">
+  Tell me to extract the mark as <code style="color: var(--accent); font-family: var(--font-mono);">mark.svg</code> + <code style="color: var(--accent); font-family: var(--font-mono);">mark-static.svg</code> and update the Claude Code brand prompt to point at this locked version.
+</p>
+
+</div>
+</body>
+</html>
