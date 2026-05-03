@@ -5,7 +5,7 @@
     "type": "module",
     "main": "dist/index.js",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && cp -r src/resources dist/resources",
         "dev": "tsx watch src/index.ts",
         "start": "node dist/index.js",
         "test": "vitest",

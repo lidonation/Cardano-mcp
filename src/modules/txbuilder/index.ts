@@ -176,8 +176,7 @@ export function registerTxBuilderModule(server: McpServer): void {
         const { MeshTxBuilder } = await import("@meshsdk/core");
 
         // Fetch UTxOs for coin selection
-        const { blockfrost: bf } = await import("../../lib/blockfrost.js");
-        const utxos = await bf<Array<{
+        const utxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
           amount: Array<{ unit: string; quantity: string }>;
@@ -188,7 +187,7 @@ export function registerTxBuilderModule(server: McpServer): void {
         }
 
         // Fetch current slot for TTL
-        const latestBlock = await bf<{ slot: number }>("/blocks/latest");
+        const latestBlock = await blockfrost<{ slot: number }>("/blocks/latest");
         const ttl = latestBlock.slot + ttl_slots;
 
         const txBuilder = new MeshTxBuilder();
@@ -302,10 +301,9 @@ export function registerTxBuilderModule(server: McpServer): void {
     }) => {
       try {
         const { MeshTxBuilder } = await import("@meshsdk/core");
-        const { blockfrost: bf } = await import("../../lib/blockfrost.js");
 
         // Fetch the UTxO at the script address
-        const utxos = await bf<Array<{
+        const utxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
           amount: Array<{ unit: string; quantity: string }>;
@@ -323,7 +321,7 @@ export function registerTxBuilderModule(server: McpServer): void {
         }
 
         // Fetch collateral UTxO details
-        const collateralUtxos = await bf<Array<{
+        const collateralUtxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
           amount: Array<{ unit: string; quantity: string }>;
@@ -340,7 +338,7 @@ export function registerTxBuilderModule(server: McpServer): void {
           );
         }
 
-        const latestBlock = await bf<{ slot: number }>("/blocks/latest");
+        const latestBlock = await blockfrost<{ slot: number }>("/blocks/latest");
         const ttl = latestBlock.slot + 7200;
 
         const txBuilder = new MeshTxBuilder();

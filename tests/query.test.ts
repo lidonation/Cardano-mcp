@@ -153,4 +153,41 @@ describe("query module", () => {
       expect(data.tx_count).toBe(10);
     });
   });
+
+  describe("get_network_info", () => {
+    it("returns network, chain tip, and epoch info", async () => {
+      const fakeBlock = {
+        hash: "b".repeat(64),
+        height: 10000000,
+        slot: 115000000,
+        epoch: 510,
+        epoch_slot: 200000,
+        time: 1700000000,
+      };
+      const fakeEpoch = {
+        epoch: 510,
+        start_time: 1699000000,
+        end_time: 1700000000,
+        first_block_time: 1699000001,
+        last_block_time: 1699999999,
+        block_count: 21600,
+        tx_count: 500000,
+        output: "50000000000000",
+        fees: "100000000",
+      };
+
+      blockfrostMock
+        .mockResolvedValueOnce(fakeBlock)
+        .mockResolvedValueOnce(fakeEpoch);
+
+      const result = await server.tools["get_network_info"]!.handler({});
+
+      expect(result.isError).toBeUndefined();
+      const data = JSON.parse(result.content[0].text);
+      expect(data.network).toBeDefined();
+      expect(data.chain_tip.block_height).toBe(10000000);
+      expect(data.chain_tip.epoch).toBe(510);
+      expect(data.current_epoch.tx_count).toBe(500000);
+    });
+  });
 });

@@ -6,7 +6,8 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { blockfrost } from "../../lib/blockfrost.js";
-import { decodeCborDatum } from "../../lib/cbor.js";
+import { decodeCborDatum, encodePlutusDataToHex } from "../../lib/cbor.js";
+import type { PlutusDataJson } from "../../lib/cbor.js";
 import type { ScriptInfo } from "../../types/cardano.js";
 
 const execFileAsync = promisify(execFile);
@@ -423,6 +424,62 @@ aiken-lang/stdlib = { version = "v2" }
             "5. The compiled script is in plutus.json → validators[0].compiledCode",
             "6. Use get_script_info with the script hash after deployment to verify",
           ],
+        });
+      } catch (e: unknown) {
+        return err(e instanceof Error ? e.message : String(e));
+      }
+    }
+  );
+
+  server.tool(
+    "encode_plutus_data",
+    "Encode a PlutusData JSON structure back to CBOR hex. " +
+      "This is the inverse of decode_cbor_datum — use it when you need to construct a datum " +
+      "for a transaction or verify what a known CBOR hex decodes to. " +
+      "Accepts the same JSON structure that decode_cbor_datum returns.",
+    {
+      plutus_data: z
+        .object({
+          type: z
+            .enum(["int", "bytes", "list", "map", "constructor"])
+            .describe("PlutusData variant type"),
+          value: z
+            .union([z.string(), z.number()])
+            .optional()
+            .describe("For type=int: the integer value. For type=bytes: hex-encoded bytes."),
+          items: z
+            .array(z.unknown())
+            .optional()
+            .describe("For type=list: array of nested PlutusData JSON objects"),
+          entries: z
+            .array(
+              z.object({
+                key: z.unknown().describe("Key as PlutusData JSON"),
+                value: z.unknown().describe("Value as PlutusData JSON"),
+              })
+            )
+            .optional()
+            .describe("For type=map: array of {key, value} pairs"),
+          constr_index: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe("For type=constructor: the alternative index (0, 1, 2…)"),
+          fields: z
+            .array(z.unknown())
+            .optional()
+            .describe("For type=constructor: array of nested PlutusData JSON objects"),
+        })
+        .describe("PlutusData in the JSON format returned by decode_cbor_datum"),
+    },
+    async ({ plutus_data }) => {
+      try {
+        const cbor = await encodePlutusDataToHex(plutus_data as PlutusDataJson);
+        return ok({
+          cbor_hex: cbor,
+          input: plutus_data,
+          note: "Use this CBOR hex as inline_datum or datum_hash input when building transactions.",
         });
       } catch (e: unknown) {
         return err(e instanceof Error ? e.message : String(e));

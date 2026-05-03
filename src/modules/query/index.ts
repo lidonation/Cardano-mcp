@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { blockfrost } from "../../lib/blockfrost.js";
 import { koios } from "../../lib/koios.js";
-import { lovelaceToAda } from "../../config.js";
+import { lovelaceToAda, NETWORK, KOIOS_BASE_URL, BLOCKFROST_BASE_URL } from "../../config.js";
 import type {
   UTxO,
   Transaction,
@@ -202,6 +202,66 @@ export function registerQueryModule(server: McpServer): void {
           address,
           tx_count: limited.length,
           transactions: limited,
+        });
+      } catch (e: unknown) {
+        return err(e instanceof Error ? e.message : String(e));
+      }
+    }
+  );
+
+  server.tool(
+    "get_network_info",
+    "Get current Cardano network status: latest block, epoch, slot, and chain tip. " +
+      "Also shows which network this server is connected to (mainnet/preprod/preview) " +
+      "and the configured API endpoints. Use this as a sanity check that the server is " +
+      "working and connected to the right network.",
+    {},
+    async () => {
+      try {
+        const [latestBlock, latestEpoch] = await Promise.all([
+          blockfrost<{
+            hash: string;
+            height: number;
+            slot: number;
+            epoch: number;
+            epoch_slot: number;
+            time: number;
+          }>("/blocks/latest"),
+          blockfrost<{
+            epoch: number;
+            start_time: number;
+            end_time: number;
+            first_block_time: number;
+            last_block_time: number;
+            block_count: number;
+            tx_count: number;
+            output: string;
+            fees: string;
+          }>("/epochs/latest"),
+        ]);
+
+        return ok({
+          network: NETWORK,
+          endpoints: {
+            blockfrost: BLOCKFROST_BASE_URL,
+            koios: KOIOS_BASE_URL,
+          },
+          chain_tip: {
+            block_hash: latestBlock.hash,
+            block_height: latestBlock.height,
+            slot: latestBlock.slot,
+            epoch: latestBlock.epoch,
+            epoch_slot: latestBlock.epoch_slot,
+            block_time: new Date(latestBlock.time * 1000).toISOString(),
+          },
+          current_epoch: {
+            epoch: latestEpoch.epoch,
+            start_time: new Date(latestEpoch.start_time * 1000).toISOString(),
+            end_time: new Date(latestEpoch.end_time * 1000).toISOString(),
+            block_count: latestEpoch.block_count,
+            tx_count: latestEpoch.tx_count,
+            total_output_ada: lovelaceToAda(latestEpoch.output),
+          },
         });
       } catch (e: unknown) {
         return err(e instanceof Error ? e.message : String(e));

@@ -7,12 +7,14 @@ vi.mock("../src/lib/blockfrost.js", () => ({
 
 vi.mock("../src/lib/cbor.js", () => ({
   decodeCborDatum: vi.fn(),
+  encodePlutusDataToHex: vi.fn(),
 }));
 
 const { blockfrost } = await import("../src/lib/blockfrost.js");
-const { decodeCborDatum } = await import("../src/lib/cbor.js");
+const { decodeCborDatum, encodePlutusDataToHex } = await import("../src/lib/cbor.js");
 const blockfrostMock = vi.mocked(blockfrost);
 const decodeMock = vi.mocked(decodeCborDatum);
+const encodeMock = vi.mocked(encodePlutusDataToHex);
 
 function createMockServer() {
   const tools: Record<string, { handler: Function }> = {};
@@ -134,6 +136,31 @@ describe("contracts module", () => {
       expect(data.files["validators/simple_lock.ak"]).toContain("validator");
       expect(data.next_steps).toBeInstanceOf(Array);
     });
+
+  describe("encode_plutus_data", () => {
+    it("encodes PlutusData JSON back to CBOR hex", async () => {
+      encodeMock.mockResolvedValueOnce("d87980");
+
+      const result = await server.tools["encode_plutus_data"]!.handler({
+        plutus_data: { type: "constructor", constr_index: 0, fields: [] },
+      });
+
+      expect(result.isError).toBeUndefined();
+      const data = JSON.parse(result.content[0].text);
+      expect(data.cbor_hex).toBe("d87980");
+      expect(encodeMock).toHaveBeenCalledWith({ type: "constructor", constr_index: 0, fields: [] });
+    });
+
+    it("returns error when encoding fails", async () => {
+      encodeMock.mockRejectedValueOnce(new Error("Invalid data"));
+
+      const result = await server.tools["encode_plutus_data"]!.handler({
+        plutus_data: { type: "int", value: 42 },
+      });
+
+      expect(result.isError).toBe(true);
+    });
+  });
 
     it("returns all six templates without error", async () => {
       const templates = ["simple_lock", "time_lock", "multisig", "vesting", "nft_mint", "oracle"] as const;
