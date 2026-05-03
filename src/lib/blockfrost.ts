@@ -70,7 +70,7 @@ export async function blockfrost<T>(
 /** POST helper for Blockfrost endpoints that accept a body (e.g. /tx/submit). */
 export async function blockfrostPost<T>(
   path: string,
-  body: BodyInit,
+  body: Buffer | string | Uint8Array,
   contentType = "application/json"
 ): Promise<T> {
   return blockfrost<T>(path, {

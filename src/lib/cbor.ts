@@ -6,9 +6,15 @@
  *
  * CSL is loaded lazily because it's a WASM module — importing it at the
  * top level can cause issues in some environments.
+ *
+ * Note on PlutusMap: CSL v12 uses PlutusMapValues (a list) per key,
+ * because Plutus maps technically allow multiple values per key.
+ * In practice keys are unique, so we always read index 0.
  */
 
-type CslModule = typeof import("@emurgo/cardano-serialization-lib-nodejs");
+import type * as CslTypes from "@emurgo/cardano-serialization-lib-nodejs";
+
+type CslModule = typeof CslTypes;
 
 let _csl: CslModule | null = null;
 
@@ -24,13 +30,14 @@ export interface PlutusDataJson {
   value?: string | number | bigint;
   items?: PlutusDataJson[];
   entries?: Array<{ key: PlutusDataJson; value: PlutusDataJson }>;
-  constructor?: number;
+  /** constructor alternative index (0 = Nothing/False, 1 = Just/True, etc.) */
+  constr_index?: number;
   fields?: PlutusDataJson[];
 }
 
 function cslPlutusDataToJson(
   Csl: CslModule,
-  data: ReturnType<CslModule["PlutusData"]["from_hex"]>
+  data: CslTypes.PlutusData
 ): PlutusDataJson {
   const kind = data.kind();
   const DataKind = Csl.PlutusDataKind;
@@ -68,11 +75,13 @@ function cslPlutusDataToJson(
     const entries: Array<{ key: PlutusDataJson; value: PlutusDataJson }> = [];
     for (let i = 0; i < keys.len(); i++) {
       const key = keys.get(i);
-      const val = map.get(key);
-      if (val) {
+      const vals = map.get(key);
+      // PlutusMapValues is a list; grab the first value (keys are unique in practice)
+      const firstVal = vals?.get(0);
+      if (firstVal) {
         entries.push({
           key: cslPlutusDataToJson(Csl, key),
-          value: cslPlutusDataToJson(Csl, val),
+          value: cslPlutusDataToJson(Csl, firstVal),
         });
       }
     }
@@ -81,14 +90,14 @@ function cslPlutusDataToJson(
 
   if (kind === DataKind.ConstrPlutusData) {
     const constr = data.as_constr_plutus_data();
-    if (!constr) return { type: "constructor", constructor: 0, fields: [] };
+    if (!constr) return { type: "constructor", constr_index: 0, fields: [] };
     const alt = constr.alternative().to_str();
     const dataList = constr.data();
     const fields: PlutusDataJson[] = [];
     for (let i = 0; i < dataList.len(); i++) {
       fields.push(cslPlutusDataToJson(Csl, dataList.get(i)));
     }
-    return { type: "constructor", constructor: parseInt(alt, 10), fields };
+    return { type: "constructor", constr_index: parseInt(alt, 10), fields };
   }
 
   return { type: "bytes", value: "<unknown kind>" };
@@ -106,7 +115,7 @@ export async function decodeCborDatum(cborHex: string): Promise<PlutusDataJson> 
 }
 
 /**
- * Encode a PlutusData JSON back to CBOR hex.
+ * Encode a PlutusDataJson back to CBOR hex.
  * Useful for constructing datums when building transactions.
  */
 export async function encodePlutusDataToHex(
@@ -114,9 +123,7 @@ export async function encodePlutusDataToHex(
 ): Promise<string> {
   const Csl = await getCsl();
 
-  function buildPlutusData(
-    j: PlutusDataJson
-  ): ReturnType<CslModule["PlutusData"]["from_hex"]> {
+  function buildPlutusData(j: PlutusDataJson): CslTypes.PlutusData {
     switch (j.type) {
       case "int": {
         const bigNum = Csl.BigInt.from_str(String(j.value ?? 0));
@@ -136,12 +143,14 @@ export async function encodePlutusDataToHex(
       case "map": {
         const map = Csl.PlutusMap.new();
         for (const { key, value } of j.entries ?? []) {
-          map.insert(buildPlutusData(key), buildPlutusData(value));
+          const mapValues = Csl.PlutusMapValues.new();
+          mapValues.add(buildPlutusData(value));
+          map.insert(buildPlutusData(key), mapValues);
         }
         return Csl.PlutusData.new_map(map);
       }
       case "constructor": {
-        const alt = Csl.BigNum.from_str(String(j.constructor ?? 0));
+        const alt = Csl.BigNum.from_str(String(j.constr_index ?? 0));
         const fields = Csl.PlutusList.new();
         for (const field of j.fields ?? []) {
           fields.add(buildPlutusData(field));

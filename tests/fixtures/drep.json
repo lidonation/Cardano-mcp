@@ -1,0 +1,14 @@
+[
+  {
+    "drep_id": "drep1y9slwfmljfxq8wnfmvkl0hnzpuwnzqjq2ld4k6dqmgv5vwm4rjqy6q5gf",
+    "hex": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "has_script": false,
+    "registered": true,
+    "retired": false,
+    "deposit": "500000000",
+    "active_epoch_no": 448,
+    "meta_url": "https://example.com/drep.json",
+    "meta_hash": "def456",
+    "voting_power": "10000000000"
+  }
+]

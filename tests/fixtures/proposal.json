@@ -1,0 +1,19 @@
+[
+  {
+    "proposal_id": "gov_action1qpqzklrt8se9ev9s5x0gqwlz6g0g4yt5tqygqdyq7qpsx4s3y2s4s5wvpa",
+    "tx_hash": "abc123def456abc123def456abc123def456abc123def456abc123def456abcd",
+    "cert_index": 0,
+    "gov_action_type": "InfoAction",
+    "epoch_no": 450,
+    "epoch_expiry": 456,
+    "proposal_status": "active",
+    "meta_url": "https://example.com/proposal.json",
+    "meta_hash": "abc123",
+    "deposit": "1000000000",
+    "return_address": "stake1uxyz",
+    "ratified_epoch": null,
+    "enacted_epoch": null,
+    "dropped_epoch": null,
+    "expired_epoch": null
+  }
+]

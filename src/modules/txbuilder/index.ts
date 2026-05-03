@@ -154,7 +154,7 @@ export function registerTxBuilderModule(server: McpServer): void {
         .default([])
         .describe("Native assets to include in the output (optional)"),
       metadata: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .optional()
         .describe("Transaction metadata as JSON object (optional)"),
       ttl_slots: z
