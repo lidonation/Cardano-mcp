@@ -4,6 +4,8 @@ import { registerQueryModule } from "./modules/query/index.js";
 import { registerTokensModule } from "./modules/tokens/index.js";
 import { registerTxBuilderModule } from "./modules/txbuilder/index.js";
 import { registerGovernanceModule } from "./modules/governance/index.js";
+import { registerContractsModule } from "./modules/contracts/index.js";
+import { registerIndexerModule } from "./modules/indexer/index.js";
 import { NETWORK } from "./config.js";
 
 export const server = new McpServer({
@@ -11,10 +13,12 @@ export const server = new McpServer({
   version: "0.1.0",
 });
 
-// Register all Phase 1 + Governance modules
+// Register all modules — Phase 1, Phase 2, Governance
 registerQueryModule(server);
 registerTokensModule(server);
 registerTxBuilderModule(server);
+registerContractsModule(server);
+registerIndexerModule(server);
 registerGovernanceModule(server);
 
 async function main(): Promise<void> {
