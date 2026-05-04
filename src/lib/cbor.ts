@@ -1,17 +1,3 @@
-/**
- * CBOR datum decoder using @emurgo/cardano-serialization-lib-nodejs.
- *
- * Cardano datums are stored on-chain as CBOR hex. This module converts
- * them to a readable JSON representation that AI agents can reason about.
- *
- * CSL is loaded lazily because it's a WASM module — importing it at the
- * top level can cause issues in some environments.
- *
- * Note on PlutusMap: CSL v12 uses PlutusMapValues (a list) per key,
- * because Plutus maps technically allow multiple values per key.
- * In practice keys are unique, so we always read index 0.
- */
-
 import type * as CslTypes from "@emurgo/cardano-serialization-lib-nodejs";
 
 type CslModule = typeof CslTypes;
@@ -103,10 +89,6 @@ function cslPlutusDataToJson(
   return { type: "bytes", value: "<unknown kind>" };
 }
 
-/**
- * Decode a CBOR hex datum string into a structured JSON representation.
- * This is the primary tool for making on-chain datum state readable.
- */
 export async function decodeCborDatum(cborHex: string): Promise<PlutusDataJson> {
   const Csl = await getCsl();
   const clean = cborHex.startsWith("0x") ? cborHex.slice(2) : cborHex;
@@ -114,10 +96,6 @@ export async function decodeCborDatum(cborHex: string): Promise<PlutusDataJson> 
   return cslPlutusDataToJson(Csl, data);
 }
 
-/**
- * Encode a PlutusDataJson back to CBOR hex.
- * Useful for constructing datums when building transactions.
- */
 export async function encodePlutusDataToHex(
   json: PlutusDataJson
 ): Promise<string> {

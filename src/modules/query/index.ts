@@ -22,16 +22,6 @@ function err(message: string) {
   };
 }
 
-/**
- * Register all query module tools on the MCP server.
- *
- * Tools:
- *   get_address_utxos       — fetch UTxOs at a Cardano address
- *   get_tx_details          — fetch transaction details + UTxOs
- *   get_asset_info          — fetch native asset metadata + supply
- *   get_block_info          — fetch block details by hash or number
- *   query_address_history   — fetch transaction history for an address
- */
 export function registerQueryModule(server: McpServer): void {
   server.tool(
     "get_address_utxos",
@@ -122,7 +112,6 @@ export function registerQueryModule(server: McpServer): void {
     },
     async ({ asset }) => {
       try {
-        // Blockfrost expects policyId+assetName concatenated without dot
         const assetId = asset.replace(".", "");
         const info = await blockfrost<AssetInfo>(`/assets/${assetId}`);
 

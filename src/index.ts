@@ -13,7 +13,6 @@ export const server = new McpServer({
   version: "0.1.0",
 });
 
-// Register all modules — Phase 1, Phase 2, Governance
 registerQueryModule(server);
 registerTokensModule(server);
 registerTxBuilderModule(server);
@@ -21,18 +20,24 @@ registerContractsModule(server);
 registerIndexerModule(server);
 registerGovernanceModule(server);
 
+const ACCENT = "\x1b[38;2;58;166;232m";
+const DIM    = "\x1b[2m";
+const R      = "\x1b[0m";
+
 const BANNER = `
-\x1b[38;2;93;182;255m  ╭───────────────────────────────────────╮\x1b[0m
-\x1b[38;2;93;182;255m  │\x1b[0m  \x1b[1mcardano\x1b[0m\x1b[2m/\x1b[0m\x1b[38;2;63;212;176mmcp\x1b[0m  v0.1.0          \x1b[32mlive\x1b[0m  \x1b[38;2;93;182;255m│\x1b[0m
-\x1b[38;2;93;182;255m  │\x1b[0m  38 tools · 6 modules · CIP-1694    \x1b[38;2;93;182;255m│\x1b[0m
-\x1b[38;2;93;182;255m  ╰───────────────────────────────────────╯\x1b[0m
+  ${ACCENT}●${R}──○
+   ${DIM}○${R}
+   ○   ${DIM}cardano/mcp${R}
+       ${DIM}v${process.env.npm_package_version ?? "0.1.0"} · 38 tools · 6 modules${R}
+
+  ${ACCENT}▸${R} stdio transport ready
+  ${ACCENT}▸${R} network: ${NETWORK}
 `;
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write(BANNER);
-  process.stderr.write(`  network: ${NETWORK}\n\n`);
 }
 
 main().catch((e: unknown) => {

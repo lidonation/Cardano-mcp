@@ -28,15 +28,6 @@ interface AddressAsset {
   asset_name_utf8?: string;
 }
 
-/**
- * Register all token module tools on the MCP server.
- *
- * Tools:
- *   get_nft_metadata       — fetch CIP-25/68 NFT metadata
- *   list_wallet_assets     — list all native assets at an address
- *   build_mint_transaction — build an unsigned native asset minting tx
- *   get_policy_assets      — list all assets under a minting policy
- */
 export function registerTokensModule(server: McpServer): void {
   server.tool(
     "get_nft_metadata",
@@ -171,9 +162,7 @@ export function registerTokensModule(server: McpServer): void {
       recipient_address,
     }) => {
       try {
-        // Dynamic import to keep startup fast
-        const { MeshTxBuilder, BrowserWallet } = await import("@meshsdk/core");
-        void BrowserWallet; // imported for type context, not used directly
+        const { MeshTxBuilder } = await import("@meshsdk/core");
 
         const assetNameHex = Buffer.from(asset_name, "utf8").toString("hex");
         const recipient = recipient_address ?? minting_address;
@@ -284,5 +273,4 @@ export function registerTokensModule(server: McpServer): void {
   );
 }
 
-// Re-export Asset type for convenience
 export type { Asset };

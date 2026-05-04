@@ -15,21 +15,6 @@ function err(message: string) {
   };
 }
 
-/**
- * Register all indexer module tools on the MCP server.
- *
- * Kupo is a lightweight Cardano chain-follower that indexes UTxOs by pattern.
- * It must be running locally (KUPO_URL env var, default http://localhost:1442).
- *
- * Yaci Store is a custom indexer with a REST API for advanced queries.
- * It must be running locally (YACI_STORE_URL env var, default http://localhost:8080).
- *
- * Tools:
- *   watch_address        — register a Kupo watch pattern for an address
- *   query_kupo_matches   — query all UTxO matches for a pattern
- *   get_rollup_status    — Kupo sync health and tip info
- *   query_custom_indexer — passthrough to Yaci Store REST API
- */
 export function registerIndexerModule(server: McpServer): void {
   server.tool(
     "watch_address",

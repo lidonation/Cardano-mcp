@@ -31,10 +31,6 @@ async function fetchWithRetry(
   throw new Error("Max retries exceeded");
 }
 
-/**
- * Typed Blockfrost API client.
- * Automatically injects project_id header and network-aware base URL.
- */
 export async function blockfrost<T>(
   path: string,
   options: RequestInit = {}
@@ -67,7 +63,6 @@ export async function blockfrost<T>(
   return response.json() as Promise<T>;
 }
 
-/** POST helper for Blockfrost endpoints that accept a body (e.g. /tx/submit). */
 export async function blockfrostPost<T>(
   path: string,
   body: Buffer | string | Uint8Array,

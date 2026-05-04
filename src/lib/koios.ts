@@ -23,14 +23,9 @@ async function fetchWithRetry(
 
     return response;
   }
-  // Unreachable but satisfies TS
   throw new Error("Max retries exceeded");
 }
 
-/**
- * Typed Koios API client.
- * Pass a body to use POST (most Koios endpoints), omit for GET.
- */
 export async function koios<T>(
   path: string,
   body?: Record<string, unknown>

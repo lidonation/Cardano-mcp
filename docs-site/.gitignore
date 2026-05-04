@@ -14,11 +14,16 @@ pages/tools/*/
 !pages/tools/index.mdx
 
 # Auto-generated raster brand assets — rebuilt by scripts/gen-brand-assets.ts
+public/icon-*.png
 public/favicon-*.png
 public/favicon.ico
 public/apple-touch-icon.png
 public/og.png
+public/og-card.png
 public/brand/avatar-512.png
+
+# Source brand folder (SVGs copied to public/brand/ — keep source out of git)
+brand/
 
 # Internal design/AI files — not needed in repo
 Brand.html

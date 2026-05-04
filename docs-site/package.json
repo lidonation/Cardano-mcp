@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "tsx scripts/gen-tool-docs.ts && tsx scripts/gen-brand-assets.ts && next build",
+    "gen:tools": "tsx scripts/gen-tool-docs.ts",
+    "gen:brand": "tsx scripts/gen-brand-assets.ts",
     "gen": "tsx scripts/gen-tool-docs.ts",
     "brand": "tsx scripts/gen-brand-assets.ts",
     "start": "next start",

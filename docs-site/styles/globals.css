@@ -1,5 +1,3 @@
-/* Cardano MCP — global styles for Nextra docs site */
-
 * { box-sizing: border-box; }
 
 html, body {
@@ -28,17 +26,13 @@ body::before {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: transparent; border: 0; cursor: pointer; }
 
-/* ==================================
-   Pulse animation
-   ================================== */
+/* Pulse animation */
 @keyframes pulse {
   0%   { box-shadow: 0 0 0 0 oklch(0.80 0.13 155 / 0.55); }
   100% { box-shadow: 0 0 0 7px oklch(0.80 0.13 155 / 0); }
 }
 
-/* ==================================
-   Chain pill
-   ================================== */
+/* Chain pill */
 .chain-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 4px 10px 4px 8px; border-radius: 999px;
@@ -52,9 +46,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   animation: pulse 2s ease-out infinite;
 }
 
-/* ==================================
-   KBD
-   ================================== */
+/* KBD */
 .kbd {
   display: inline-flex; align-items: center; gap: 2px;
   padding: 2px 5px;
@@ -63,9 +55,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   border: 1px solid var(--line-1); border-radius: 4px; line-height: 1;
 }
 
-/* ==================================
-   Hero
-   ================================== */
+/* Hero */
 .hero {
   position: relative; margin-bottom: 56px;
   padding: 36px 36px 32px;
@@ -102,9 +92,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 }
 .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; }
 
-/* ==================================
-   Buttons
-   ================================== */
+/* Buttons */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 16px; border-radius: var(--radius-2);
@@ -119,9 +107,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .btn-ghost:hover { background: var(--bg-2); border-color: var(--line-3); }
 .btn-mono { font-family: var(--font-mono); font-size: 12px; }
 
-/* ==================================
-   Hero graph / diagram
-   ================================== */
+/* Hero graph / diagram */
 .hero-graph {
   position: relative; height: 200px;
   border-radius: var(--radius-2); border: 1px solid var(--line-1);
@@ -146,9 +132,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .hero-graph .col { display: flex; flex-direction: column; }
 .hero-graph svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
-/* ==================================
-   Hero stats
-   ================================== */
+/* Hero stats */
 .hero-stats {
   display: grid; grid-template-columns: repeat(4, 1fr);
   margin-top: 28px; padding-top: 24px;
@@ -160,9 +144,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .hero-stats .stat .num { font-family: var(--font-mono); font-size: 22px; letter-spacing: -0.02em; color: var(--fg-0); }
 .hero-stats .stat .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); margin-top: 4px; }
 
-/* ==================================
-   Callouts
-   ================================== */
+/* Callouts */
 .callout {
   display: flex; gap: 12px; padding: 14px 16px;
   margin: 16px 0 24px; border-radius: var(--radius-2);
@@ -184,9 +166,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   border: 1px solid var(--line-1); border-radius: 4px;
 }
 
-/* ==================================
-   Module grid
-   ================================== */
+/* Module grid */
 .module-grid {
   display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 12px; margin: 16px 0 32px;
@@ -214,9 +194,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .module-card .arrow { position: absolute; top: 16px; right: 16px; color: var(--fg-3); transition: color .15s, transform .15s; }
 .module-card:hover .arrow { color: var(--accent); transform: translate(2px, -2px); }
 
-/* ==================================
-   Tool explorer
-   ================================== */
+/* Tool explorer */
 .tool-explorer {
   margin: 16px 0 36px; border: 1px solid var(--line-1);
   border-radius: var(--radius-2); overflow: hidden; background: var(--bg-1);
@@ -280,9 +258,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .badge.contracts{ color: var(--accent);        border-color: var(--accent-line); }
 .badge.indexer  { color: oklch(0.78 0.10 25);  border-color: oklch(0.78 0.10 25 / 0.3); }
 
-/* ==================================
-   KV table
-   ================================== */
+/* KV table */
 .kv {
   display: grid; grid-template-columns: 200px 1fr;
   border: 1px solid var(--line-1); border-radius: var(--radius-2);
@@ -295,9 +271,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .kv .v { color: var(--fg-1); background: var(--bg-1); }
 .kv .v code { font-family: var(--font-mono); font-size: 12px; color: var(--fg-0); }
 
-/* ==================================
-   Env table
-   ================================== */
+/* Env table */
 .env-table-wrap { width: 100%; }
 .env-table {
   width: 100%; border-collapse: separate; border-spacing: 0;
@@ -312,9 +286,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 .env-table td.req.n { color: var(--fg-3); }
 .env-table td.desc { color: var(--fg-2); }
 
-/* ==================================
-   Placeholder
-   ================================== */
+/* Placeholder */
 .placeholder {
   display: grid; place-items: center; border-radius: var(--radius-2);
   border: 1px dashed var(--line-2);
@@ -326,9 +298,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   padding: 36px 16px; text-align: center;
 }
 
-/* ==================================
-   Command palette
-   ================================== */
+/* Command palette */
 .palette-overlay {
   position: fixed; inset: 0;
   background: oklch(0.10 0.01 250 / 0.55);
@@ -377,9 +347,7 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   font-size: 11px; color: var(--fg-3); font-family: var(--font-mono);
 }
 
-/* ==================================
-   Nextra theme overrides
-   ================================== */
+/* Nextra theme overrides */
 :root {
   --nextra-primary-hue: 230deg;
   --nextra-primary-saturation: 80%;
@@ -388,7 +356,6 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
 html.dark { color-scheme: dark; }
 html.dark body { background: var(--bg-0); color: var(--fg-1); }
 
-/* Force dark by default */
 html { color-scheme: dark; }
 
 /* Nav */
@@ -459,9 +426,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
 .nextra-content td { padding: 10px 14px; border-top: 1px solid var(--line-1); color: var(--fg-1); }
 .nextra-content td code { font-family: var(--font-mono); font-size: 12px; color: var(--fg-0); }
 
-/* ==================================
-   Hero component (updated structure)
-   ================================== */
+/* Hero component (updated structure) */
 .hero { display: grid; grid-template-columns: 1fr 380px; gap: 36px; align-items: center; }
 .hero-content { display: flex; flex-direction: column; }
 .hero-badge {
@@ -507,9 +472,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
 }
 .hero-svg { width: 100%; height: 100%; display: block; }
 
-/* ==================================
-   Module card (updated structure)
-   ================================== */
+/* Module card (updated structure) */
 .module-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .module-name { font-family: var(--font-mono); font-size: 13px; color: var(--fg-0); font-weight: 500; }
 .module-desc { font-size: 13px; color: var(--fg-2); line-height: 1.55; flex: 1; }
@@ -529,9 +492,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
 .chip.module-indexer { color: oklch(0.78 0.10 25); border-color: oklch(0.78 0.10 25 / 0.3); }
 .chip.module-governance { color: oklch(0.82 0.10 305); border-color: oklch(0.82 0.10 305 / 0.3); }
 
-/* ==================================
-   Tool explorer (updated structure)
-   ================================== */
+/* Tool explorer (updated structure) */
 .tool-explorer-bar {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 12px; border-bottom: 1px solid var(--line-1);
@@ -578,9 +539,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
 .tool-empty { text-align: center; padding: 32px 14px !important; color: var(--fg-3); font-family: var(--font-mono); font-size: 12px; }
 .tool-header-meta { display: flex; align-items: center; gap: 8px; margin: 8px 0 20px; }
 
-/* ==================================
-   Command palette (updated structure)
-   ================================== */
+/* Command palette (updated structure) */
 .palette-overlay {
   position: fixed; inset: 0;
   background: oklch(0.10 0.01 250 / 0.55);
@@ -589,6 +548,11 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
   animation: fade-in 0.1s ease;
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Mark flow animation — used by mark.svg paths with class="cm-flow" */
+@keyframes cm-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -12; } }
+.cm-flow { stroke-dasharray: 4 2; animation: cm-flow 1.6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .cm-flow { animation: none; } }
 .palette {
   width: min(640px, 92vw); max-height: 70vh;
   display: flex; flex-direction: column;
@@ -639,9 +603,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
   border: 1px solid var(--line-1); border-radius: 3px; margin-right: 3px;
 }
 
-/* ==================================
-   Responsive — tablet (≤880px)
-   ================================== */
+/* Responsive — tablet (≤880px) */
 @media (max-width: 880px) {
   .hero { grid-template-columns: 1fr; gap: 24px; }
   .hero-graph { display: none; }
@@ -653,9 +615,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
   .kv { grid-template-columns: 160px 1fr; }
 }
 
-/* ==================================
-   Responsive — mobile (≤640px)
-   ================================== */
+/* Responsive — mobile (≤640px) */
 @media (max-width: 640px) {
   /* Nav: hide chain pill, it overflows at this width */
   .nav-chain-pill { display: none !important; }
@@ -738,9 +698,7 @@ aside.nextra-sidebar-container { border-right: 1px solid var(--line-1); backgrou
   article { padding: 0 16px; }
 }
 
-/* ==================================
-   Responsive — small mobile (≤380px)
-   ================================== */
+/* Responsive — small mobile (≤380px) */
 @media (max-width: 380px) {
   .hero-title { font-size: 26px; }
   .hero-badge { font-size: 9px; }

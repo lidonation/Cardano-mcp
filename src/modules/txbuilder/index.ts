@@ -15,16 +15,6 @@ function err(message: string) {
   };
 }
 
-/**
- * Register all transaction builder tools on the MCP server.
- *
- * Tools:
- *   get_protocol_params        — fetch current network protocol parameters
- *   calculate_min_ada          — calculate minimum ADA for a UTxO
- *   build_payment_tx           — build unsigned ADA or token transfer tx
- *   build_smart_contract_tx    — build unsigned tx spending a script UTxO
- *   submit_transaction         — submit a signed CBOR tx to the network
- */
 export function registerTxBuilderModule(server: McpServer): void {
   server.tool(
     "get_protocol_params",
@@ -175,7 +165,6 @@ export function registerTxBuilderModule(server: McpServer): void {
       try {
         const { MeshTxBuilder } = await import("@meshsdk/core");
 
-        // Fetch UTxOs for coin selection
         const utxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
@@ -186,13 +175,11 @@ export function registerTxBuilderModule(server: McpServer): void {
           throw new Error(`No UTxOs found at address ${sender_address}`);
         }
 
-        // Fetch current slot for TTL
         const latestBlock = await blockfrost<{ slot: number }>("/blocks/latest");
         const ttl = latestBlock.slot + ttl_slots;
 
         const txBuilder = new MeshTxBuilder();
 
-        // Add inputs (simple greedy selection — use all UTxOs, let builder pick)
         for (const utxo of utxos) {
           txBuilder.txIn(
             utxo.tx_hash,
@@ -202,7 +189,6 @@ export function registerTxBuilderModule(server: McpServer): void {
           );
         }
 
-        // Build output
         const outputAssets: Array<{ unit: string; quantity: string }> = [];
         if (BigInt(lovelace_amount) > 0n) {
           outputAssets.push({ unit: "lovelace", quantity: lovelace_amount });
@@ -302,7 +288,6 @@ export function registerTxBuilderModule(server: McpServer): void {
       try {
         const { MeshTxBuilder } = await import("@meshsdk/core");
 
-        // Fetch the UTxO at the script address
         const utxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
@@ -320,7 +305,6 @@ export function registerTxBuilderModule(server: McpServer): void {
           );
         }
 
-        // Fetch collateral UTxO details
         const collateralUtxos = await blockfrost<Array<{
           tx_hash: string;
           tx_index: number;
@@ -343,7 +327,6 @@ export function registerTxBuilderModule(server: McpServer): void {
 
         const txBuilder = new MeshTxBuilder();
 
-        // Add script input with redeemer
         txBuilder.spendingPlutusScriptV2()
           .txIn(
             targetUtxo.tx_hash,
@@ -354,12 +337,10 @@ export function registerTxBuilderModule(server: McpServer): void {
           .txInScript(script_cbor)
           .txInRedeemerValue(redeemer_cbor, "CBOR");
 
-        // Attach datum if provided (when not inline)
         if (datum_cbor) {
           txBuilder.txInDatumValue(datum_cbor, "CBOR");
         }
 
-        // Collateral
         txBuilder.txInCollateral(
           collateral.tx_hash,
           collateral.tx_index,
@@ -401,7 +382,6 @@ export function registerTxBuilderModule(server: McpServer): void {
     },
     async ({ signed_tx_cbor }) => {
       try {
-        // Blockfrost expects the raw CBOR bytes, not JSON
         const txBytes = Buffer.from(signed_tx_cbor, "hex");
         const txHash = await blockfrostPost<string>(
           "/tx/submit",

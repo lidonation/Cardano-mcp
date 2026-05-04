@@ -1,4 +1,3 @@
-/* Design tokens — ported from docs/style.css */
 :root {
   /* Surfaces */
   --bg-0: oklch(0.14 0.012 250);
@@ -44,8 +43,10 @@
   --ring: 0 0 0 1px var(--line-1);
   --ring-2: 0 0 0 1px var(--line-2);
 
-  /* Brand accent family — all share L=0.78 C=0.16, hue-only variation */
-  --accent-2: oklch(0.78 0.16 165);   /* mint-cyan */
-  --accent-3: oklch(0.78 0.16 295);   /* violet */
-  --grad-brand: linear-gradient(135deg, oklch(0.78 0.16 230), oklch(0.78 0.16 165));
+  /* Brand gradient — locked C6 palette (mono-accent, blue → cyan) */
+  --accent-2: oklch(0.78 0.16 195);
+  --grad-brand: linear-gradient(135deg, var(--accent), var(--accent-2));
+
+  /* Background base for theme-color meta */
+  --bg-base-hex: #0f1827;
 }

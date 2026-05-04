@@ -1,10 +1,10 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)"  srcset="docs/assets/banner.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner.png">
-  <img alt="cardano-mcp · The Cardano stack, native to your AI agent." src="docs/assets/banner.png" width="100%">
-</picture>
+<p align="center">
+  <img src="docs-site/public/brand/mark.svg" alt="cardano/mcp" width="96" />
+</p>
 
-# cardano-mcp
+<h1 align="center">cardano<span>/</span>mcp</h1>
+
+<p align="center"><em>A Model Context Protocol server for the Cardano ledger.</em></p>
 
 > The Cardano stack, native to your AI agent.
 

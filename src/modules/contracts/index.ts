@@ -30,10 +30,6 @@ function err(message: string) {
   };
 }
 
-/**
- * Validator scaffold templates for common Cardano patterns.
- * Each template is a complete, compilable Aiken validator.
- */
 const VALIDATOR_TEMPLATES: Record<string, string> = {
   simple_lock: `use cardano/transaction.{Transaction, OutputReference}
 
@@ -200,17 +196,6 @@ validator oracle_consumer {
 `,
 };
 
-/**
- * Register all contracts module tools on the MCP server.
- *
- * Tools:
- *   explain_eutxo_model    — inject eUTxO model context
- *   get_aiken_stdlib_docs  — Aiken standard library reference
- *   validate_aiken_snippet — shell out to `aiken check`
- *   get_script_info        — fetch Plutus script info from Blockfrost
- *   decode_cbor_datum      — decode raw CBOR datum hex to JSON
- *   scaffold_validator     — generate Aiken validator boilerplate
- */
 export function registerContractsModule(server: McpServer): void {
   server.tool(
     "explain_eutxo_model",
