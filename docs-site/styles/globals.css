@@ -101,10 +101,10 @@ button { font: inherit; color: inherit; background: transparent; border: 0; curs
   transition: background .15s, border-color .15s, color .15s, transform .1s;
 }
 .btn:active { transform: translateY(0.5px); }
-.btn-primary { background: var(--fg-0); color: var(--bg-0); }
-.btn-primary:hover { background: oklch(1 0 0); }
-.btn-ghost { border-color: var(--line-2); color: var(--fg-1); }
-.btn-ghost:hover { background: var(--bg-2); border-color: var(--line-3); }
+.btn-primary { background: var(--fg-0); color: var(--bg-0) !important; }
+.btn-primary:hover { background: oklch(1 0 0); color: var(--bg-0) !important; }
+.btn-ghost { border-color: var(--line-2); color: var(--fg-1) !important; }
+.btn-ghost:hover { background: var(--bg-2); border-color: var(--line-3); color: var(--fg-0) !important; }
 .btn-mono { font-family: var(--font-mono); font-size: 12px; }
 
 /* Hero graph / diagram */

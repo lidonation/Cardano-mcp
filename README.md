@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="docs-site/public/brand/mark.svg" alt="cardano/mcp" width="96" />
+  <img src="docs-site/public/brand/lockup-horizontal.svg" alt="cardano/mcp" width="320" />
 </p>
-
-<h1 align="center">cardano<span>/</span>mcp</h1>
 
 <p align="center"><em>A Model Context Protocol server for the Cardano ledger.</em></p>
 

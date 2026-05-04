@@ -5,7 +5,7 @@ import { useConfig } from "nextra-theme-docs";
 
 const Logo = () => (
   <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-    <img src="/brand/mark.svg" alt="" width={28} height={28} />
+    <img src="/brand/mark.svg" alt="" width={32} height={32} />
     <span style={{ fontFamily: "var(--font-mono)", fontSize: 15, letterSpacing: "-0.01em" }}>
       <strong>cardano</strong>
       <span style={{ background: "var(--grad-brand)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>/</span>

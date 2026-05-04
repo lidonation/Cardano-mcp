@@ -1,10 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="cardano/mcp">
-  
-  <circle cx="14" cy="32" r="5" fill="oklch(0.78 0.16 230)"></circle>
-  <path class="cm-flow" d="M 19 32 Q 32 32 42 18" fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round"></path>
-  <path class="cm-flow" d="M 19 32 L 42 32" fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round" style="animation-delay:-0.5s;"></path>
-  <path class="cm-flow" d="M 19 32 Q 32 32 42 46" fill="none" stroke="oklch(0.78 0.16 230)" stroke-width="2" stroke-linecap="round" style="animation-delay:-1s;"></path>
-  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
-  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
-  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
+  <style>
+    .cm-flow {
+      stroke-dasharray: 4 2;
+      animation: cm-flow 1.6s linear infinite;
+    }
+    @keyframes cm-flow {
+      0%   { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -12; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cm-flow { animation: none; }
+    }
+  </style>
+  <circle cx="14" cy="32" r="5" fill="#3aa6e8"/>
+  <path class="cm-flow" d="M 19 32 Q 32 32 42 18" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round"/>
+  <path class="cm-flow" d="M 19 32 L 42 32" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round" style="animation-delay:-0.5s"/>
+  <path class="cm-flow" d="M 19 32 Q 32 32 42 46" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round" style="animation-delay:-1s"/>
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
 </svg>

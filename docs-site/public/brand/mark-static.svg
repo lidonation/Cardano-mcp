@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="cardano/mcp">
-  <circle cx="14" cy="32" r="5" fill="oklch(0.78 0.16 230)"></circle>
-  <path d="M 19 32 Q 32 32 42 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-  <path d="M 19 32 L 42 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-  <path d="M 19 32 Q 32 32 42 46" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-  <circle cx="46" cy="18" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
-  <circle cx="46" cy="32" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
-  <circle cx="46" cy="46" r="3.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
+  <circle cx="14" cy="32" r="5" fill="#3aa6e8"/>
+  <path d="M 19 32 Q 32 32 42 18" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 19 32 L 42 32" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 19 32 Q 32 32 42 46" fill="none" stroke="#3aa6e8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="46" cy="18" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
+  <circle cx="46" cy="32" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
+  <circle cx="46" cy="46" r="3.5" fill="none" stroke="#e2eaf4" stroke-width="2.2"/>
 </svg>

@@ -2,13 +2,13 @@
   <text x="0" y="18"
     font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
     font-size="18" font-weight="600" letter-spacing="-0.01em"
-    fill="oklch(0.97 0.005 250)">cardano</text>
+    fill="#f6f8fb">cardano</text>
   <text x="82" y="18"
     font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
     font-size="18" font-weight="400"
-    fill="oklch(0.42 0.012 250)">/</text>
+    fill="#3aa6e8">/</text>
   <text x="96" y="18"
     font-family="Geist Mono, ui-monospace, SF Mono, Menlo, monospace"
     font-size="18" font-weight="400"
-    fill="oklch(0.70 0.010 250)">mcp</text>
+    fill="#8892aa">mcp</text>
 </svg>
