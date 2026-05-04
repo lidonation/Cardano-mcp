@@ -1,37 +1,117 @@
 # Cardano MCP — Project Brain
 
 > Read this fully before touching any file.
-> This is the single source of truth for architecture, decisions, and context.
+> This is the single source of truth for architecture, decisions, and current state.
 
 ---
 
-## What we are building
+## What we have built
 
-A **production-grade MCP server** that gives AI agents like Claude deep, idiomatic access
-to the Cardano blockchain — smart contracts, UTxOs, tokens, indexers, and on-chain
-governance. The goal: a developer using Claude should be able to build a full Cardano dApp
-without ever leaving their AI coding session.
+This project has two distinct parts:
 
-This fills a real gap. Solana has 40+ MCPs. EVM has 30+. Cardano has nothing dedicated.
+### 1. MCP Server (`src/`)
+A production-grade Model Context Protocol server that gives AI agents deep, idiomatic access to the Cardano blockchain — UTxOs, native assets, smart contracts, indexers, and on-chain governance. Developers using Claude can build full Cardano dApps without leaving their AI coding session.
+
+### 2. Documentation site (`docs-site/`)
+A Nextra v3 static docs site deployed at `cardano-mcp.dev`. Fully built, mobile-optimised, dark-only theme. Covers installation, configuration, all 6 modules, 38 tools, and Cardano concepts.
 
 ---
 
-## Tech stack — NEVER deviate without updating this file
+## Completion status
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Language | **TypeScript** (strict) | MCP SDK is TS-first, best type safety |
-| MCP SDK | `@modelcontextprotocol/sdk` latest | Official Anthropic SDK |
-| Schema validation | `zod` | MCP SDK expects Zod schemas |
-| Primary blockchain API | **Koios** (`api.koios.rest/api/v1`) | Free, decentralized, full governance support |
-| Secondary API | **Blockfrost** | Widest coverage, best SDK ecosystem |
-| High-perf UTxO queries | **Maestro** (`mainnet.gomaestro-api.org/v1`) | 9x faster multi-address UTxO queries |
-| Event watching | **Kupo** (local sidecar) | Pattern-based UTxO watching, persists across restarts |
-| Smart contract language | **Aiken** awareness | Inject context, validate snippets via CLI |
-| Off-chain tx building | **Mesh SDK** (`@meshsdk/core`) | Best TS tx building for Cardano |
-| Runtime | **Node.js 20+** LTS | Required by MCP SDK |
-| Package manager | **pnpm** | Faster, strict deps |
-| Testing | **vitest** | Fast, ESM-native |
+### MCP Server — COMPLETE
+
+| Module | File | Tools | Status |
+|--------|------|-------|--------|
+| query | `src/modules/query/index.ts` | 6 | ✅ Complete |
+| tokens | `src/modules/tokens/index.ts` | 4 | ✅ Complete |
+| txbuilder | `src/modules/txbuilder/index.ts` | 5 | ✅ Complete |
+| contracts | `src/modules/contracts/index.ts` | 7 | ✅ Complete |
+| indexer | `src/modules/indexer/index.ts` | 4 | ✅ Complete |
+| governance | `src/modules/governance/index.ts` | 12 | ✅ Complete |
+| Entry point | `src/index.ts` | — | ✅ All modules registered |
+| Config | `src/config.ts` | — | ✅ Network-aware, env-driven |
+| Koios client | `src/lib/koios.ts` | — | ✅ Retry + rate limiting |
+| Blockfrost client | `src/lib/blockfrost.ts` | — | ✅ Project-ID injection |
+| Maestro client | `src/lib/maestro.ts` | — | ✅ |
+| Kupo client | `src/lib/kupo.ts` | — | ✅ |
+| CBOR codec | `src/lib/cbor.ts` | — | ✅ CSL-based encode/decode |
+| Shared types | `src/types/cardano.ts` | — | ✅ |
+
+**Total: 38 tools across 6 modules.**
+
+### Docs Site — COMPLETE
+
+| Area | Status |
+|------|--------|
+| Nextra v3 + Next.js 14.2 setup | ✅ |
+| Dark-only theme, oklch color tokens | ✅ |
+| Geist Sans + Geist Mono via `next/font/local` | ✅ |
+| Hero, ModuleGrid, ToolExplorer, CommandPalette (⌘K) | ✅ |
+| Callout, KV, EnvTable, Placeholder, ChainPill components | ✅ |
+| All 14 top-level MDX pages | ✅ |
+| 6 module pages + 38 auto-generated tool pages | ✅ |
+| `scripts/gen-tool-docs.ts` — MDX generator | ✅ |
+| `scripts/gen-brand-assets.ts` — raster asset generator | ✅ |
+| Mobile responsive (375px → desktop) | ✅ |
+| Static export (`next build` → `out/`) | ✅ verified |
+
+### Brand System — COMPLETE (C6 mark, locked palette)
+
+The brand uses the **C6 locked mark**: a filled root dot fanning into three hollow leaf nodes via animated flow paths. Mono-accent palette: `#3aa6e8` (blue) only — mint and violet dropped.
+
+| Asset | File | Purpose |
+|-------|------|---------|
+| Animated mark | `public/brand/mark.svg` | Nav logo, README, live surfaces |
+| Static mark | `public/brand/mark-static.svg` | Fallback (print, no-JS) |
+| Hex-fallback mark | `public/brand/mark-static-hex.svg` | Source for rasterizer (sharp) |
+| Mono mark | `public/brand/mark-mono.svg` | `currentColor` for inline SVG theming |
+| Solid tile | `public/brand/mark-solid.svg` | Favicon rounded-square tile |
+| Favicon | `public/favicon.svg` | Browser tab (32×32) |
+| Wordmark | `public/brand/wordmark.svg` | Text-only `cardano/mcp` |
+| Horizontal lockup | `public/brand/lockup-horizontal.svg` | README header |
+| Stacked lockup | `public/brand/lockup-stacked.svg` | Square contexts |
+| OG card (SVG) | `public/brand/og-1200x630.svg` | Source for OG raster |
+| README banner | `public/brand/readme-banner.svg` | 1280×320 banner |
+| Raster icons | `public/icon-{16,32,48,180,192,512}.png` | Generated by brand script |
+| OG raster | `public/og-card.png` | Generated by brand script |
+
+**Brand rules:**
+1. Use `mark.svg` (animated) everywhere except favicons ≤32px, print, OG raster — those use `mark-static-hex.svg`
+2. Wordmark is always `cardano/mcp` with the slash in `#3aa6e8`. Never `cardano-mcp`, `Cardano MCP`, or all-caps
+3. One accent: `#3aa6e8` / `oklch(0.78 0.16 230)`. Mint and violet are dropped from the locked palette
+4. Animation always runs root → leaves. Never reverse
+
+---
+
+## Tech stack
+
+### MCP Server
+| Layer | Choice |
+|-------|--------|
+| Language | TypeScript strict |
+| MCP SDK | `@modelcontextprotocol/sdk` |
+| Schema validation | `zod` |
+| Primary API | Koios (`api.koios.rest/api/v1`) |
+| Secondary API | Blockfrost |
+| UTxO queries | Maestro |
+| Event watching | Kupo (local sidecar) |
+| Tx building | Mesh SDK (`@meshsdk/core`) |
+| CBOR codec | `@emurgo/cardano-serialization-lib-nodejs` |
+| Runtime | Node.js 20+ |
+| Package manager | yarn (despite CLAUDE.md saying pnpm — user prefers yarn) |
+| Testing | vitest |
+
+### Docs Site
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 14.2.29 |
+| Docs theme | Nextra 3.3.1 + nextra-theme-docs |
+| Font loading | `next/font/local` → `geist` npm package |
+| Styling | CSS custom properties (oklch), no Tailwind |
+| Color system | oklch tokens in `styles/tokens.css` |
+| Output | `next build` → static export in `out/` |
+| Icon rasterization | `sharp` |
 
 ---
 
@@ -39,264 +119,180 @@ This fills a real gap. Solana has 40+ MCPs. EVM has 30+. Cardano has nothing ded
 
 ```
 cardano-mcp/
-├── CLAUDE.md                    ← YOU ARE HERE
-├── package.json
+├── CLAUDE.md                        ← YOU ARE HERE
+├── README.md                        ← lockup-horizontal.svg header + badges
+├── .gitignore
+├── package.json                     ← yarn workspaces root
 ├── tsconfig.json
 ├── .env.example
 ├── src/
-│   ├── index.ts                 ← MCP server entry point, registers all modules
-│   ├── config.ts                ← env vars, network selection (mainnet/preprod/preview)
+│   ├── index.ts                     ← MCP entry, registers all 6 modules, prints boot banner
+│   ├── config.ts                    ← env vars, network URLs, lovelaceToAda helper
 │   ├── lib/
-│   │   ├── koios.ts             ← Koios API client with retry + rate limiting
-│   │   ├── blockfrost.ts        ← Blockfrost client
-│   │   ├── maestro.ts           ← Maestro client
-│   │   ├── kupo.ts              ← Kupo client
-│   │   └── cbor.ts              ← CBOR decode/encode utilities
+│   │   ├── koios.ts                 ← Koios client, retry + exponential backoff
+│   │   ├── blockfrost.ts            ← Blockfrost client + blockfrostPost helper
+│   │   ├── maestro.ts               ← Maestro client
+│   │   ├── kupo.ts                  ← Kupo client
+│   │   └── cbor.ts                  ← PlutusData encode/decode via CSL
 │   ├── modules/
-│   │   ├── query/               ← Phase 1: blockchain queries
-│   │   │   └── index.ts
-│   │   ├── txbuilder/           ← Phase 1: transaction building
-│   │   │   └── index.ts
-│   │   ├── tokens/              ← Phase 1: native assets & NFTs
-│   │   │   └── index.ts
-│   │   ├── contracts/           ← Phase 2: Aiken + smart contract tooling
-│   │   │   └── index.ts
-│   │   ├── indexer/             ← Phase 2: Kupo + Yaci Store
-│   │   │   └── index.ts
-│   │   └── governance/          ← Phase 3: CIP-1694 full governance
-│   │       └── index.ts         ← ALREADY WRITTEN — see src/governance/index.ts
+│   │   ├── query/index.ts           ← 6 tools: UTxOs, tx, asset, block, history, network
+│   │   ├── tokens/index.ts          ← 4 tools: NFT metadata, wallet assets, mint, policy
+│   │   ├── txbuilder/index.ts       ← 5 tools: protocol params, minADA, payment, script, submit
+│   │   ├── contracts/index.ts       ← 7 tools: eUTxO explainer, Aiken docs/validate/scaffold, script info, CBOR decode/encode
+│   │   ├── indexer/index.ts         ← 4 tools: watch address, query matches, health, Yaci passthrough
+│   │   └── governance/index.ts      ← 12 tools: proposals, DReps, committee, treasury, votes
 │   ├── resources/
-│   │   ├── eutxo-context.md     ← Injected context: eUTxO model explainer
-│   │   ├── governance-context.md← Injected context: CIP-1694 explainer
-│   │   └── aiken-stdlib.md      ← Aiken standard library quick reference
-│   └── types/
-│       └── cardano.ts           ← Shared TypeScript types
+│   │   ├── eutxo-context.md
+│   │   ├── governance-context.md
+│   │   └── aiken-stdlib.md
+│   └── types/cardano.ts
 ├── tests/
 │   ├── query.test.ts
 │   ├── governance.test.ts
-│   └── fixtures/                ← Sample API responses for mocking
-└── docs/
-    ├── governance.md            ← ALREADY WRITTEN
-    └── getting-started.md
+│   └── fixtures/
+└── docs-site/
+    ├── .gitignore                   ← ignores out/, .next/, generated pages/tools/*/, raster PNGs
+    ├── next.config.mjs
+    ├── theme.config.tsx             ← Nextra config: animated mark logo, dark-forced, banner
+    ├── package.json
+    ├── components/
+    │   ├── Hero.tsx                 ← Landing hero with stats grid + arch diagram
+    │   ├── ModuleGrid.tsx           ← 6 module cards
+    │   ├── ToolExplorer.tsx         ← Searchable/filterable tool table
+    │   ├── CommandPalette.tsx       ← ⌘K palette with 15 navigation items
+    │   ├── Callout.tsx              ← info/warn/ok/danger callout blocks
+    │   ├── ChainPill.tsx            ← "mainnet · live" animated dot pill
+    │   ├── EnvTable.tsx             ← Env var reference table (scrollable on mobile)
+    │   ├── KV.tsx                   ← Key/value display component
+    │   └── Placeholder.tsx          ← Coming-soon placeholder for unwritten pages
+    ├── data/
+    │   └── tools.generated.json     ← 38 tool entries: name, module, description, upstream[]
+    ├── lib/
+    │   └── fonts.ts                 ← Geist Sans + Geist Mono via next/font/local
+    ├── pages/
+    │   ├── _app.tsx
+    │   ├── _document.tsx            ← favicon links, OG meta, theme-color
+    │   ├── _meta.ts                 ← Nextra sidebar structure (NOT _meta.json)
+    │   ├── index.mdx                ← Homepage (Hero + ModuleGrid)
+    │   ├── install.mdx
+    │   ├── configure.mdx
+    │   ├── claude-desktop.mdx
+    │   ├── claude-code.mdx
+    │   ├── first-queries.mdx
+    │   ├── concepts.mdx
+    │   ├── modules/                 ← 6 module overview pages
+    │   ├── tools/                   ← index.mdx (ToolExplorer) + 38 auto-generated tool pages
+    │   ├── reference.mdx
+    │   ├── recipes.mdx
+    │   └── changelog.mdx
+    ├── public/
+    │   ├── favicon.svg              ← 32×32 rounded-square with C6 mark
+    │   ├── icon-{16,32,48,180,192,512}.png  ← Generated by gen-brand-assets.ts
+    │   ├── og-card.png              ← 1200×630 OG image, generated
+    │   └── brand/                   ← All brand SVGs (see Brand System table above)
+    ├── scripts/
+    │   ├── gen-tool-docs.ts         ← Reads tools.generated.json, outputs MDX + _meta.ts per module
+    │   └── gen-brand-assets.ts      ← Rasterizes mark-static-hex.svg → icon PNGs + og-card.png
+    └── styles/
+        ├── tokens.css               ← CSS custom properties (colors, radii, shadows, fonts)
+        └── globals.css              ← All component styles + Nextra overrides + mobile breakpoints
 ```
 
 ---
 
-## The 6 modules and 28 tools — build in this order
+## Critical Cardano concepts
 
-### Phase 1 — Core (build first, no local infra needed)
+### eUTxO model
+- No account balances — only UTxOs (txHash + outputIndex + address + value + optional datum)
+- Smart contracts are VALIDATORS: they approve or deny spending, not run arbitrary code
+- Datums carry state attached to UTxOs, not to a contract address
+- Always fetch UTxOs; sum of UTxO lovelace IS the balance
 
-#### Module: `query` (5 tools)
-- `get_address_utxos` → Blockfrost `/addresses/{addr}/utxos`
-- `get_tx_details` → Blockfrost `/txs/{hash}` + `/txs/{hash}/utxos`
-- `get_asset_info` → Maestro or Blockfrost `/assets/{asset}`
-- `get_block_info` → Koios `/block_info`
-- `query_address_history` → Koios `/address_txs`
+### Encoding
+- `1 ADA = 1,000,000 lovelace` — always work in lovelace internally, use `lovelaceToAda()` for display
+- Assets: `policyId.hexAssetName` (e.g. `abc123.4d79546f6b656e`)
+- Addresses: bech32 `addr1...` mainnet, `addr_test1...` testnet
+- Datums: raw CBOR hex — decode with `decode_cbor_datum` tool
+- All API amounts are STRINGS to avoid BigInt overflow
 
-#### Module: `txbuilder` (5 tools)
-- `build_payment_tx` → Mesh SDK `MeshTxBuilder`
-- `build_smart_contract_tx` → Mesh SDK with datum/redeemer
-- `calculate_min_ada` → protocol params + value calculation
-- `get_protocol_params` → Blockfrost `/epochs/latest/parameters`
-- `submit_transaction` → Blockfrost `/tx/submit`
-
-#### Module: `tokens` (4 tools)
-- `get_nft_metadata` → Blockfrost `/assets/{asset}` CIP-25/68
-- `list_wallet_assets` → Maestro or Koios `/address_assets`
-- `build_mint_transaction` → Mesh SDK native/Plutus mint
-- `get_policy_assets` → Blockfrost `/assets/policy/{policyId}`
-
-### Phase 2 — Smart contracts + indexer
-
-#### Module: `contracts` (6 tools)
-- `explain_eutxo_model` → resource: loads `resources/eutxo-context.md`
-- `get_aiken_stdlib_docs` → fetches from aiken-lang.org or bundled docs
-- `validate_aiken_snippet` → shells out to `aiken check`
-- `get_script_info` → Blockfrost `/scripts/{scriptHash}`
-- `decode_cbor_datum` → lib/cbor.ts (THE most important tool)
-- `scaffold_validator` → template generator for common patterns
-
-#### Module: `indexer` (4 tools)
-- `watch_address` → Kupo `PUT /matches/{pattern}`
-- `query_kupo_matches` → Kupo `GET /matches/{pattern}`
-- `get_rollup_status` → Kupo `GET /health`
-- `query_custom_indexer` → Yaci Store REST passthrough
-
-### Phase 3 — Governance (ALREADY WRITTEN)
-
-#### Module: `governance` (12 tools) — SEE `src/governance/index.ts`
-All 12 tools are implemented. Just import and register in `src/index.ts`.
-
----
-
-## Critical Cardano concepts — understand these before writing ANY tool
-
-### eUTxO model (NOT Ethereum's account model)
-- There are NO account balances. There are UTxOs (Unspent Transaction Outputs)
-- Each UTxO has: txHash + outputIndex + address + value (lovelace + assets) + optional datum
-- Smart contracts are VALIDATORS — they don't run code, they APPROVE or DENY transactions
-- A script LOCKS a UTxO. To spend it, you provide a REDEEMER that satisfies the validator
-- Datums carry the "state" — they're attached to UTxOs, not to a contract address
-- This means: ALWAYS fetch UTxOs, not balances. The sum of UTxO values IS the balance.
-
-### Encoding hell — the #1 AI agent pain point
-- Lovelace: `1 ADA = 1,000,000 lovelace` — ALWAYS work in lovelace internally
-- Assets: `policyId + "." + hex(assetName)` — e.g. `"abc123.4d79546f6b656e"`
-- Addresses: bech32 (`addr1...`) for mainnet, `addr_test1...` for testnet
-- Script hashes: hex, 56 chars
-- Datums: raw CBOR hex — must be decoded with `decode_cbor_datum` tool
-- Transaction IDs: hex, 64 chars
-- All amounts in API responses are STRINGS (avoid JS BigInt overflow)
-
-### CIP-1694 Governance (full detail in `src/governance/index.ts`)
+### CIP-1694 Governance
 - 3 voting bodies: DReps, SPOs, Constitutional Committee
-- 7 action types: MotionOfNoConfidence, UpdateCommittee, UpdateConstitution,
-  HardForkInitiation, ParameterChange, TreasuryWithdrawal, InfoAction
-- Proposals identified by CIP-129 bech32 `gov_action1...` IDs
-- DRep IDs: bech32 `drep1...` per CIP-0005/129
-- Governance is LIVE on mainnet since Plomin Hard Fork (Jan 2025)
+- 7 action types: MotionOfNoConfidence, UpdateCommittee, UpdateConstitution, HardForkInitiation, ParameterChange, TreasuryWithdrawal, InfoAction
+- Live on mainnet since Plomin Hard Fork (Jan 2025)
 
 ---
 
-## API client patterns — use these everywhere
+## API patterns
 
-### Koios client (`lib/koios.ts`)
 ```typescript
-// POST with body (most endpoints)
-const result = await koios<ProposalList[]>("/proposal_list", {
-  _proposal_status: "active"
-});
+// Koios — POST with body (most endpoints), omit body for GET
+const blocks = await koios<BlockInfo[]>("/block_info", { _block_hashes: [hash] });
+const dreps  = await koios<DRepInfo[]>("/drep_list");
 
-// GET (list endpoints)
-const dreps = await koios<DRepInfo[]>("/drep_list");
-```
-
-Always include retry with exponential backoff for 429s.
-Koios base URL comes from `config.ts` → respects `CARDANO_NETWORK` env var.
-
-### Blockfrost client (`lib/blockfrost.ts`)
-```typescript
+// Blockfrost — always GET unless using blockfrostPost
 const params = await blockfrost<ProtocolParams>("/epochs/latest/parameters");
-```
 
-### Error handling pattern (use in every tool)
-```typescript
-try {
-  const data = await koios<T>(path, body);
-  return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
-} catch (err: any) {
-  return {
-    content: [{ type: "text", text: `Error: ${err.message}` }],
-    isError: true,
-  };
-}
-```
+// Tool return format — always structured JSON
+return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
 
-### Tool return format — ALWAYS structured JSON
-Tools MUST return `{ content: [{ type: "text", text: JSON.stringify(result, null, 2) }] }`.
-Never return raw strings. Claude needs parseable JSON to reason about chain state.
+// Error return
+return { content: [{ type: "text" as const, text: `Error: ${msg}` }], isError: true };
+```
 
 ---
 
-## Environment variables (`.env`)
+## Environment variables
 
 ```bash
-# Network: mainnet | preprod | preview
-CARDANO_NETWORK=mainnet
-
-# Required for most tools
-BLOCKFROST_PROJECT_ID=mainnetXXXXXXXXXXXXXX
-
-# Required for governance + query
-KOIOS_URL=https://api.koios.rest/api/v1
-
-# Optional — higher performance UTxO queries
-MAESTRO_API_KEY=your_maestro_key
-
-# Optional — only if running Kupo locally
-KUPO_URL=http://localhost:1442
-
-# Optional — only if running Yaci Store locally
-YACI_STORE_URL=http://localhost:8080
+CARDANO_NETWORK=mainnet          # mainnet | preprod | preview
+BLOCKFROST_PROJECT_ID=mainnetXXX # required for most tools
+KOIOS_URL=https://api.koios.rest/api/v1  # optional override
+MAESTRO_API_KEY=your_key         # optional, faster UTxO queries
+KUPO_URL=http://localhost:1442   # optional, indexer tools
+YACI_STORE_URL=http://localhost:8080     # optional, custom indexer
 ```
 
 ---
 
-## Build, test, and run commands
+## Commands
 
+### MCP Server
 ```bash
-pnpm install
-pnpm build          # tsc → dist/
-pnpm dev            # ts-node src/index.ts (watch mode)
-pnpm test           # vitest
-pnpm test:coverage  # vitest --coverage
-pnpm lint           # eslint src/
-pnpm typecheck      # tsc --noEmit
+yarn build          # tsc → dist/
+yarn dev            # watch mode
+yarn test           # vitest
+yarn typecheck      # tsc --noEmit
+yarn lint           # eslint src/
 ```
 
-To add to Claude Desktop for testing:
-```json
-{
-  "mcpServers": {
-    "cardano": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "env": {
-        "BLOCKFROST_PROJECT_ID": "your_key",
-        "CARDANO_NETWORK": "preprod"
-      }
-    }
-  }
-}
+### Docs Site (run from docs-site/)
+```bash
+yarn dev            # Next.js dev server
+yarn build          # gen-tool-docs + gen-brand-assets + next build → out/
+yarn gen:tools      # regenerate MDX tool pages from tools.generated.json
+yarn gen:brand      # regenerate raster brand assets (icon-*.png, og-card.png)
+yarn typecheck      # tsc --noEmit
 ```
 
 ---
 
-## Code style — enforce strictly
+## Code style
 
-- **TypeScript strict mode** — no `any` except where unavoidable (API responses)
-- **Zod schemas for all tool inputs** — include `.describe()` on every field
-- **JSDoc on every tool** — the description IS the tool's documentation for Claude
-- **Named exports only** — no default exports (easier to tree-shake and test)
-- **No magic numbers** — constants in `src/config.ts` or top of file
-- **Lovelace helper** — always use `lovelaceToAda(n)` for display, never raw division inline
-
----
-
-## What is already built
-
-| File | Status |
-|------|--------|
-| `src/governance/index.ts` | ✅ Complete — 12 tools, full CIP-1694 |
-| `docs/governance.md` | ✅ Complete — full reference doc |
-| This `CLAUDE.md` | ✅ You're reading it |
-
-Everything else needs to be built.
+- TypeScript strict — no `any` except unavoidable API responses
+- Zod schemas on all tool inputs with `.describe()` on every field
+- Named exports only — no default exports
+- No comments unless the WHY is non-obvious (hidden constraint, workaround, invariant)
+- No what-comments — well-named identifiers are the documentation
+- `lovelaceToAda()` for display — never inline division
 
 ---
 
-## Build order for a fresh session
+## Key decisions made
 
-1. `package.json` + `tsconfig.json` + `.env.example`
-2. `src/config.ts` — env loading, network config, base URLs
-3. `src/lib/koios.ts` — Koios client with retry
-4. `src/lib/blockfrost.ts` — Blockfrost client
-5. `src/lib/cbor.ts` — CBOR decoder (use `@emurgo/cardano-serialization-lib-nodejs`)
-6. `src/types/cardano.ts` — shared types
-7. `src/modules/query/index.ts` — Phase 1 query tools
-8. `src/modules/tokens/index.ts` — Phase 1 token tools
-9. `src/modules/txbuilder/index.ts` — Phase 1 tx tools
-10. `src/index.ts` — wire everything together + register governance module
-11. Tests for all of the above
-12. Then Phase 2 modules
-
----
-
-## Compact instructions
-
-When compacting this session, preserve:
-- All architecture decisions in "Tech stack" table
-- The 28 tools list and their module assignments
-- The Cardano concepts section (eUTxO, encoding, governance)
-- What is already built table
-- The build order list
+- **yarn over pnpm** — user preference (despite original CLAUDE.md specifying pnpm)
+- **`next/font/local`** — Geist not available on Google Fonts in Next.js 14.2; load from `geist` npm package
+- **`_meta.ts` not `_meta.json`** — Nextra v3 breaking change; must be TypeScript with `export default`
+- **Nextra config properties** — use `content` not `text` for `editLink`, `footer`, `banner`
+- **`!important` on button colors** — Nextra's `.nextra-content a { color: var(--accent) }` overrides button text; suppressed with `!important` on `.btn-primary` and `.btn-ghost`
+- **Animated SVG as `<img>`** — CSS from globals.css cannot reach inside `<img>` tags; `mark.svg` carries its own `<style>` block with `@keyframes cm-flow`
+- **`currentColor` broken in `<img>`** — all brand SVGs loaded as `<img>` use explicit hex colors (`#3aa6e8`, `#e2eaf4`); `mark-mono.svg` (inline use only) is the exception
