@@ -24,7 +24,7 @@ Cardano's eUTxO model is fundamentally different from Ethereum's account model â
 ## Quick start
 
 ```bash
-git clone https://github.com/Emmanuel-Tyty/Cardano-mcp
+git clone https://github.com/lidonation/Cardano-mcp
 cd Cardano-mcp
 pnpm install && pnpm build
 ```
