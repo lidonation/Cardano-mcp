@@ -83,4 +83,4 @@ pnpm lint       # eslint src/
 
 ## License
 
-MIT © 2025 Emmanuel Tyty
+MIT © 2025 lidonation
