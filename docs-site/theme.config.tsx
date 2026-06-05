@@ -44,8 +44,8 @@ const config: DocsThemeConfig = {
     </span>
   ),
 
-  project: { link: "https://github.com/Emmanuel-Tyty/Cardano-mcp" },
-  docsRepositoryBase: "https://github.com/Emmanuel-Tyty/Cardano-mcp/tree/main/docs-site",
+  project: { link: "https://github.com/lidonation/Cardano-mcp" },
+  docsRepositoryBase: "https://github.com/lidonation/Cardano-mcp/tree/main/docs-site",
 
   sidebar: {
     defaultMenuCollapseLevel: 1,

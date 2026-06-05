@@ -30,7 +30,7 @@ async function main() {
   <rect width="1200" height="630" fill="url(#g1)"/>
   <text x="64" y="320" font-family="ui-sans-serif, system-ui" font-weight="600" font-size="64" fill="#f6f8fb">A Model Context Protocol server</text>
   <text x="64" y="396" font-family="ui-sans-serif, system-ui" font-weight="600" font-size="64" fill="#3aa6e8">for the Cardano ledger.</text>
-  <text x="64" y="560" font-family="ui-monospace, Menlo, monospace" font-size="22" fill="#9aa6b8">github.com/Emmanuel-Tyty/Cardano-mcp</text>
+  <text x="64" y="560" font-family="ui-monospace, Menlo, monospace" font-size="22" fill="#9aa6b8">github.com/lidonation/Cardano-mcp</text>
 </svg>`);
 
   await sharp(og)
