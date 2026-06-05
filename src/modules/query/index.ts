@@ -51,7 +51,7 @@ export function registerQueryModule(server: McpServer): void {
     async ({ address, page, count }) => {
       try {
         const utxos = await blockfrost<UTxO[]>(
-          `/addresses/${address}/utxos?page=${page}&count=${count}&order=asc`
+          `/addresses/${address}/utxos?page=${page ?? 1}&count=${count ?? 100}&order=asc`
         );
 
         const totalLovelace = utxos.reduce((sum, u) => {

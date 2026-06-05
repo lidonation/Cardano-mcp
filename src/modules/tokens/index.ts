@@ -239,7 +239,7 @@ export function registerTokensModule(server: McpServer): void {
     async ({ policy_id, page, count }) => {
       try {
         const assets = await blockfrost<PolicyAsset[]>(
-          `/assets/policy/${policy_id}?page=${page}&count=${count}&order=asc`
+          `/assets/policy/${policy_id}?page=${page ?? 1}&count=${count ?? 100}&order=asc`
         );
 
         const withNames = assets.map((a) => {
