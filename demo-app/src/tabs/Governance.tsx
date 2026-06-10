@@ -380,10 +380,12 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
 
 export function Governance() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [treasury,  setTreasury]  = useState<TreasuryData | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
-  const [filter,    setFilter]    = useState<string>("all");
+  const [treasury,      setTreasury]      = useState<TreasuryData | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState<string | null>(null);
+  const [filter,        setFilter]        = useState<string>("all");
+  const [overview,      setOverview]      = useState<string | null>(null);
+  const [loadingOverview, setLoadingOverview] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -400,6 +402,55 @@ export function Governance() {
     }
     load();
   }, []);
+
+  async function fetchOverview() {
+    if (loadingOverview) return;
+    setLoadingOverview(true);
+    setOverview(null);
+    try {
+      // Pass the already-loaded proposals so the server doesn't re-fetch
+      const res = await fetch("/stream-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposals }),
+      });
+
+      if (!res.body) throw new Error("No stream");
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let text   = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const event = JSON.parse(raw);
+            if (event.text) {
+              text += event.text;
+              setOverview(text); // update as each chunk arrives
+            } else if (event.error) {
+              setOverview(`Error: ${event.error}`);
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (!text) setOverview("No summary generated.");
+    } catch {
+      setOverview("Failed to generate overview — check your API key.");
+    }
+    setLoadingOverview(false);
+  }
 
   // Collect unique action types for filter tabs
   const types = ["all", ...Array.from(new Set(proposals.map((p) => p.governance_type)))];
@@ -446,6 +497,48 @@ export function Governance() {
               {t === "all" ? `All (${proposals.length})` : (TYPE_LABELS[t] ?? t)}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* ── AI Overview ── */}
+      {!loading && proposals.length > 0 && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🤖</span>
+              <span className="text-sm font-semibold text-blue-900">AI Governance Overview</span>
+            </div>
+            {!overview && (
+              <button
+                onClick={fetchOverview}
+                disabled={loadingOverview}
+                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {loadingOverview ? "Summarising…" : "Summarise all proposals"}
+              </button>
+            )}
+            {overview && (
+              <button
+                onClick={() => { setOverview(null); }}
+                className="text-xs text-blue-400 hover:text-blue-600"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          {loadingOverview && (
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          )}
+          {overview && !loadingOverview && (
+            <p className="text-sm text-blue-900 leading-relaxed">{overview}</p>
+          )}
+          {!overview && !loadingOverview && (
+            <p className="text-xs text-blue-400">Click the button to get an AI-powered summary of all {proposals.length} active proposals.</p>
+          )}
         </div>
       )}
 

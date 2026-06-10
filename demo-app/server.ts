@@ -65,13 +65,17 @@ async function fetchIpfs<T = unknown>(ipfsUrl: string): Promise<T | null> {
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return null;
-    return res.json() as Promise<T>;
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("json")) return null;
+    const text = await res.text();
+    if (!text.trim()) return null;
+    return JSON.parse(text) as T;
   } catch {
     return null;
   }
 }
 
-/** Extract plain text from a CIP-100/108 IPFS metadata document */
+/** Extract CIP-100/108 proposal metadata from an IPFS document */
 function extractIpfsMeta(doc: any): { title: string | null; abstract: string | null; rationale: string | null; motivation: string | null } {
   const body = doc?.body ?? {};
   return {
@@ -80,6 +84,44 @@ function extractIpfsMeta(doc: any): { title: string | null; abstract: string | n
     rationale:  body.rationale  ?? null,
     motivation: body.motivation ?? null,
   };
+}
+
+/** Extract CIP-119 DRep identity metadata from an IPFS document */
+function extractDRepMeta(doc: any): {
+  name: string | null;
+  bio: string | null;
+  objectives: string | null;
+  qualifications: string | null;
+  paymentAddress: string | null;
+  references: Array<{ type: string; label: string; uri: string }>;
+} {
+  const body = doc?.body ?? {};
+  const refs: Array<{ type: string; label: string; uri: string }> = [];
+  for (const r of body.references ?? []) {
+    if (r?.uri) refs.push({ type: r["@type"] ?? "Link", label: r.label ?? "", uri: r.uri });
+  }
+  return {
+    name:           body.givenName ?? body.name ?? null,
+    bio:            body.motivations ?? body.bio ?? null,
+    objectives:     body.objectives ?? null,
+    qualifications: body.qualifications ?? null,
+    paymentAddress: body.paymentAddress ?? null,
+    references:     refs,
+  };
+}
+
+function predictOutcome(tally: { yes: number; no: number; abstain: number }): {
+  prediction: string;
+  confidence: string;
+  reasoning: string;
+} {
+  const decisive = tally.yes + tally.no;
+  if (decisive < 5) return { prediction: "insufficient_data", confidence: "low", reasoning: "Not enough decisive votes yet." };
+  const yesRatio = tally.yes / decisive;
+  const yesPct = Math.round(yesRatio * 100);
+  if (yesRatio >= 0.67) return { prediction: "likely_to_pass", confidence: decisive >= 20 ? "high" : "medium", reasoning: `${yesPct}% of decisive votes are YES.` };
+  if (yesRatio <= 0.33) return { prediction: "likely_to_fail", confidence: decisive >= 20 ? "high" : "medium", reasoning: `Only ${yesPct}% of decisive votes are YES.` };
+  return { prediction: "too_close_to_call", confidence: "low", reasoning: `YES: ${yesPct}%, NO: ${100 - yesPct}% — within the uncertain band.` };
 }
 
 function lovelaceToAda(lovelace: string | number | bigint): string {
@@ -431,6 +473,90 @@ ${rationaleBlock}`;
       };
     }
 
+    case "get_drep_info": {
+      const { drep_id } = params as { drep_id: string };
+      const raw = await koios<any[]>("/drep_info", { _drep_ids: [drep_id] });
+      if (!raw?.length) throw new Error(`DRep ${drep_id} not found`);
+      const d = raw[0];
+      const doc = d.meta_url ? await fetchIpfs<any>(d.meta_url) : null;
+      const identity = doc ? extractDRepMeta(doc) : null;
+      return {
+        drep_id:              d.drep_id,
+        status:               d.retired ? "retired" : d.registered ? "active" : "unregistered",
+        voting_power_ada:     lovelaceToAda(d.voting_power ?? "0"),
+        voting_power_lovelace: d.voting_power,
+        deposit_lovelace:     d.deposit,
+        has_script:           d.has_script,
+        registered_epoch:     d.active_epoch_no,
+        meta_url:             d.meta_url,
+        identity,
+      };
+    }
+
+    case "get_drep_profile": {
+      const { drep_id } = params as { drep_id: string };
+
+      const [rawInfo, rawVotes] = await Promise.all([
+        koios<any[]>("/drep_info", { _drep_ids: [drep_id] }),
+        koios<any[]>("/drep_votes", { _drep_id: drep_id }).catch(() => [] as any[]),
+      ]);
+
+      if (!rawInfo?.length) throw new Error(`DRep ${drep_id} not found`);
+      const d = rawInfo[0];
+
+      const doc = d.meta_url ? await fetchIpfs<any>(d.meta_url) : null;
+      const identity = doc ? extractDRepMeta(doc) : null;
+
+      const totals = { yes: 0, no: 0, abstain: 0 };
+      const byActionType: Record<string, { yes: number; no: number; abstain: number }> = {};
+
+      for (const v of rawVotes as any[]) {
+        const choice = (v.vote ?? "").toLowerCase() as "yes" | "no" | "abstain";
+        const actionType: string = v.gov_action_type ?? "Unknown";
+        if (!byActionType[actionType]) byActionType[actionType] = { yes: 0, no: 0, abstain: 0 };
+        if (choice === "yes" || choice === "no" || choice === "abstain") {
+          totals[choice]++;
+          byActionType[actionType][choice]++;
+        }
+      }
+
+      const totalVotes = totals.yes + totals.no + totals.abstain;
+      const votingStats = {
+        total_votes:  totalVotes,
+        yes:          totals.yes,
+        no:           totals.no,
+        abstain:      totals.abstain,
+        yes_pct:      totalVotes ? Math.round((totals.yes     / totalVotes) * 100) : 0,
+        no_pct:       totalVotes ? Math.round((totals.no      / totalVotes) * 100) : 0,
+        abstain_pct:  totalVotes ? Math.round((totals.abstain / totalVotes) * 100) : 0,
+        by_action_type: byActionType,
+      };
+
+      const recentVotes = (rawVotes as any[])
+        .sort((a: any, b: any) => (b.block_time ?? 0) - (a.block_time ?? 0))
+        .slice(0, 10)
+        .map((v: any) => ({
+          proposal_id:     v.proposal_id,
+          gov_action_type: v.gov_action_type ?? null,
+          vote:            v.vote,
+          tx_hash:         v.tx_hash,
+        }));
+
+      return {
+        drep_id:               d.drep_id,
+        status:                d.retired ? "retired" : d.registered ? "active" : "unregistered",
+        voting_power_ada:      lovelaceToAda(d.voting_power ?? "0"),
+        voting_power_lovelace: d.voting_power,
+        deposit_lovelace:      d.deposit,
+        has_script:            d.has_script,
+        registered_epoch:      d.active_epoch_no,
+        meta_url:              d.meta_url,
+        identity,
+        voting_stats:  votingStats,
+        recent_votes:  recentVotes,
+      };
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -462,55 +588,345 @@ app.post("/tools/:toolName", async (req, res) => {
   }
 });
 
-// ── AI chatbot endpoint ───────────────────────────────────────────────────
-app.post("/chat", async (req, res) => {
-  if (!anthropic) {
-    res.json({ reply: "AI assistant not available — add ANTHROPIC_API_KEY to .env." });
-    return;
-  }
+// ── Shared context builder ────────────────────────────────────────────────
+async function buildChatContext(message: string): Promise<{
+  systemPrompt: string;
+  cards: any[];
+}> {
+  // Cards and data fetches trigger off the current message only — not history —
+  // to avoid showing stale/irrelevant cards from prior conversation turns.
+  const msgLower     = message.toLowerCase();
+  const isGovernance = /governance|proposal|drep|vote|treasury|withdraw|constitution|committee|cip.?1694/.test(msgLower);
+  const isTreasury   = /treasury|withdraw/.test(msgLower);
+  const drepMatch    = message.match(/drep1[a-z0-9]{50,}/i);
 
-  const { message, history = [] } = req.body as {
-    message: string;
-    history: { role: string; text: string }[];
-  };
-
-  // Fetch live context to ground Claude's answers
   let context = "";
+  const cards: any[] = [];
+
   try {
-    const [net, params] = await Promise.all([
-      handleTool("get_network_info", {}) as Promise<any>,
+    const fetches: Promise<any>[] = [
+      handleTool("get_network_info",    {}) as Promise<any>,
       handleTool("get_protocol_params", {}) as Promise<any>,
-    ]);
+    ];
+    if (isGovernance) fetches.push(handleTool("list_governance_proposals", {}) as Promise<any>);
+    if (isTreasury)   fetches.push(handleTool("get_treasury_balance",      {}) as Promise<any>);
+
+    const [net, params, ...extra] = await Promise.all(fetches);
+
     context = `Current Cardano state:
 - Network: ${net.network}, Epoch: ${net.current_epoch.epoch}, Block: ${net.chain_tip.block_height}
 - Min fee A: ${params.min_fee_a}, Min fee B: ${params.min_fee_b}
 - Coins per UTxO byte: ${params.coins_per_utxo_size}
 - Max tx size: ${params.max_tx_size} bytes`;
+
+    if (isGovernance && extra[0]) {
+      const proposals: any[] = (extra[0].proposals ?? extra[0]) as any[];
+      const top = proposals.slice(0, 6);
+      const summaries = proposals.slice(0, 20).map((p: any) => {
+        const type  = p.governance_type ?? p.gov_action_type ?? "Unknown";
+        const title = p.title ?? "(no title)";
+        const id    = p.tx_hash ? `${p.tx_hash.slice(0, 8)}…` : "?";
+        const amt   = p.withdrawal_ada ? ` | ₳${p.withdrawal_ada}` : "";
+        return `  - [${type}] ${title} (id: ${id})${amt}`;
+      }).join("\n");
+      context += `\n\nActive governance proposals (${proposals.length} total):\n${summaries}`;
+
+      // Include top 6 as proposal cards for the UI
+      if (top.length) {
+        cards.push({ type: "proposal_list", data: top });
+      }
+    }
+
+    if (isTreasury) {
+      const tIdx = isGovernance ? 1 : 0;
+      const treasury = extra[tIdx];
+      if (treasury) context += `\n\nTreasury: ₳${treasury.treasury_ada} | Reserves: ₳${treasury.reserves_ada}`;
+    }
+
+    // Detect Cardano address in the message and fetch UTxOs + recent history
+    const addrMatch = message.match(/(addr(?:_test)?1[a-z0-9]{50,})/i);
+    if (addrMatch) {
+      const address = addrMatch[1]!;
+      try {
+        const [utxoRes, txRes] = await Promise.allSettled([
+          handleTool("get_address_utxos",      { address }) as Promise<any>,
+          handleTool("query_address_history",  { address, count: 10 }) as Promise<any>,
+        ]);
+        const utxoData = utxoRes.status === "fulfilled" ? utxoRes.value  : null;
+        const txData   = txRes.status   === "fulfilled" ? txRes.value    : null;
+        if (utxoData) {
+          const assets: any[] = utxoData.native_assets ?? [];
+          context += `\n\nAddress ${address.slice(0, 20)}…:` +
+            `\n- Balance: ₳${utxoData.total_ada}` +
+            `\n- UTxOs: ${utxoData.utxo_count}` +
+            `\n- Native assets: ${assets.length}` +
+            (assets.length
+              ? "\n" + assets.slice(0, 5).map((a: any) => `  • ${a.asset_name_utf8 || a.asset_name_hex || a.unit.slice(56) || "(unnamed)"}: ${a.quantity}`).join("\n")
+              : "");
+          cards.push({
+            type: "address_utxos",
+            data: {
+              address,
+              total_ada:     utxoData.total_ada,
+              total_lovelace: utxoData.total_lovelace,
+              utxo_count:    utxoData.utxo_count,
+              native_assets: assets,
+              recent_txs:    txData?.transactions ?? [],
+            },
+          });
+        }
+      } catch { /* continue without address data */ }
+    }
+
+    // If a specific DRep ID is in the message, fetch their profile
+    if (drepMatch) {
+      try {
+        const profile = await handleTool("get_drep_profile", { drep_id: drepMatch[0] }) as any;
+        cards.push({ type: "drep_profile", data: profile });
+        context += `\n\nDRep profile for ${drepMatch[0]}:\n${JSON.stringify(profile, null, 2).slice(0, 800)}`;
+      } catch { /* DRep not found — continue */ }
+    }
   } catch { /* use no context if APIs fail */ }
 
-  const systemPrompt = `You are a helpful Cardano blockchain assistant embedded in a wallet companion app. You have access to live chain data and can answer questions about ADA, UTxOs, governance, native assets, and the Cardano protocol.
+  // Tx detection is always attempted — independent of API availability
+  // Permissive: capture amount + any addr1... in the same message
+  const txMatch = message.match(
+    /send\s+(\d+(?:\.\d+)?)\s*(?:ada|₳).{0,40}?(addr[a-z0-9]{50,})/i
+  );
+  if (txMatch) {
+    const amount_ada      = txMatch[1]!;
+    const to_address      = txMatch[2]!;
+    const amount_lovelace = Math.floor(parseFloat(amount_ada) * 1_000_000).toString();
+    // Replace any address_utxos card for the same address with tx_request
+    // (don't show a balance card for the recipient when user is sending)
+    const filtered = cards.filter((c) => !(c.type === "address_utxos" && c.data?.address === to_address));
+    filtered.push({ type: "tx_request", data: { to_address, amount_ada, amount_lovelace } });
+    cards.length = 0;
+    cards.push(...filtered);
+  }
+
+  const systemPrompt = `You are a helpful Cardano blockchain assistant embedded in a governance explorer and wallet app. You have access to live mainnet data and can assist with both read and write operations.
+
+Capabilities:
+- Query live chain data: balances, UTxOs, native assets, transaction history, network stats, protocol parameters
+- Governance: view proposals, DRep profiles, vote tallies, treasury balance
+- Transactions: when a user asks to send ADA (e.g. "send 10 ADA to addr1..."), a transaction request card is automatically shown in the UI below your message — acknowledge this and tell them to connect their wallet and click "Sign & Send"
+- Address lookup: when a user mentions an address, an address card with the live balance and UTxOs is shown automatically
 
 ${context ? `Live chain data:\n${context}` : ""}
 
-Keep answers concise (2-4 sentences). Use ₳ for ADA amounts. If asked about a specific address, token, or proposal you don't have data for, say so clearly and suggest what the user can look up in the app tabs.`;
+Instructions:
+- Answer concisely (2–4 sentences). Use ₳ for ADA amounts.
+- For governance questions, reference actual proposals by title and type from the live data above.
+- For transaction requests: confirm what will be sent and to whom, mention the transaction card below, and guide them to connect their wallet to sign. Do NOT say you cannot send transactions.
+- For address queries: summarise the balance and UTxO count from the live data above.
+- If data for something isn't in the context, say so briefly.`;
 
-  const claudeHistory = history.slice(-8).map((m) => ({
-    role: m.role as "user" | "assistant",
-    content: m.text,
-  }));
+  return { systemPrompt, cards };
+}
+
+// ── AI chatbot — non-streaming (kept for backward compat) ─────────────────
+app.post("/chat", async (req, res) => {
+  if (!anthropic) {
+    res.json({ reply: "AI assistant not available — add ANTHROPIC_API_KEY to .env." });
+    return;
+  }
+  const { message, history = [] } = req.body as { message: string; history: { role: string; text: string }[] };
+  const { systemPrompt, cards } = await buildChatContext(message);
+  const claudeHistory = history.slice(-8).map((m) => ({ role: m.role as "user" | "assistant", content: m.text }));
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 350,
-      system: systemPrompt,
-      messages: [...claudeHistory, { role: "user", content: message }],
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 600,
+      system:     systemPrompt,
+      messages:   [...claudeHistory, { role: "user", content: message }],
+    });
+    const reply = (response.content[0] as any)?.text ?? "No response generated.";
+    res.json({ reply, cards });
+  } catch (e: unknown) {
+    res.json({ reply: "AI error: " + (e instanceof Error ? e.message : String(e)), cards });
+  }
+});
+
+// ── AI chatbot — streaming ────────────────────────────────────────────────
+app.post("/stream-chat", async (req, res) => {
+  if (!anthropic) {
+    res.json({ error: "ANTHROPIC_API_KEY not set" });
+    return;
+  }
+
+  res.setHeader("Content-Type",  "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection",    "keep-alive");
+
+  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  const { message, history = [] } = req.body as { message: string; history: { role: string; text: string }[] };
+
+  try {
+    const { systemPrompt, cards } = await buildChatContext(message);
+
+    console.log("[stream-chat] message:", JSON.stringify(message));
+    console.log("[stream-chat] cards:", JSON.stringify(cards.map((c) => ({ type: c.type, data: c.type === "tx_request" ? c.data : "(omitted)" }))));
+
+    // Send card data first so the UI can render it while text streams in
+    if (cards.length) send({ type: "cards", cards });
+
+    const claudeHistory = history.slice(-8).map((m) => ({ role: m.role as "user" | "assistant", content: m.text }));
+
+    const stream = anthropic.messages.stream({
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 600,
+      system:     systemPrompt,
+      messages:   [...claudeHistory, { role: "user", content: message }],
     });
 
-    const reply = (response.content[0] as any)?.text ?? "No response generated.";
-    res.json({ reply });
+    for await (const chunk of stream) {
+      if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+        send({ type: "text", text: chunk.delta.text });
+      }
+    }
   } catch (e: unknown) {
-    res.json({ reply: "AI error: " + (e instanceof Error ? e.message : String(e)) });
+    send({ type: "error", error: e instanceof Error ? e.message : String(e) });
+  }
+
+  res.write("data: [DONE]\n\n");
+  res.end();
+});
+
+// ── Streaming governance summary ──────────────────────────────────────────
+// Takes pre-loaded proposals from the client — no extra API call needed.
+app.post("/stream-summary", async (req, res) => {
+  if (!anthropic) {
+    res.json({ error: "ANTHROPIC_API_KEY not set" });
+    return;
+  }
+
+  res.setHeader("Content-Type",  "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection",    "keep-alive");
+
+  const { proposals = [] } = req.body as { proposals: any[] };
+  const count = proposals.length;
+
+  const groups: Record<string, string[]> = {};
+  for (const p of proposals) {
+    const type = p.governance_type ?? p.gov_action_type ?? "Unknown";
+    if (!groups[type]) groups[type] = [];
+    const title = p.title ?? "(no title)";
+    const amt   = p.withdrawal_ada ? ` (₳${p.withdrawal_ada})` : "";
+    groups[type].push(`${title}${amt}`);
+  }
+
+  const proposalBlock = Object.entries(groups)
+    .map(([type, titles]) => `${type} (${titles.length}):\n${titles.slice(0, 5).map((t) => `  • ${t}`).join("\n")}`)
+    .join("\n\n");
+
+  const prompt = `You are summarizing the current state of Cardano on-chain governance for ADA holders.
+
+There are ${count} active governance proposals grouped by type:
+
+${proposalBlock}
+
+Write a 6–8 sentence overview. Group by proposal type, highlight the most significant ones, note the overall governance activity level, and explain what it means for ADA holders. Be factual and neutral. Do not use headers or bullet points — write in flowing prose.`;
+
+  try {
+    const stream = anthropic.messages.stream({
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 500,
+      messages:   [{ role: "user", content: prompt }],
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+        res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
+      }
+    }
+  } catch (e: unknown) {
+    res.write(`data: ${JSON.stringify({ error: e instanceof Error ? e.message : String(e) })}\n\n`);
+  }
+
+  res.write("data: [DONE]\n\n");
+  res.end();
+});
+
+// ── Wallet-transaction endpoints ─────────────────────────────────────────
+
+/** Decode a CIP-30 CBOR-hex address → bech32 using CSL */
+app.post("/decode-address", async (req, res) => {
+  const { cbor_hex } = req.body as { cbor_hex: string };
+  try {
+    const csl = await import("@emurgo/cardano-serialization-lib-nodejs");
+    const buf  = Buffer.from(cbor_hex, "hex");
+    // Strip CBOR byte-string header (major type 2)
+    let offset = 0;
+    const first = buf[0] ?? 0;
+    if ((first & 0xe0) === 0x40)    offset = 1;       // 0x40–0x57: length in low bits
+    else if (first === 0x58)        offset = 2;        // 1-byte length follows
+    else if (first === 0x59)        offset = 3;        // 2-byte length follows
+    const addr = csl.Address.from_bytes(buf.subarray(offset));
+    res.json({ bech32: addr.to_bech32() });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+/** Build an unsigned payment tx using Mesh + Blockfrost UTxOs */
+app.post("/build-tx", async (req, res) => {
+  const { from_address, to_address, amount_lovelace } = req.body as {
+    from_address: string;
+    to_address:   string;
+    amount_lovelace: string;
+  };
+  try {
+    const { MeshTxBuilder, BlockfrostProvider } = await import("@meshsdk/core");
+
+    const utxos = await bf<Array<{ tx_hash: string; tx_index: number; amount: Array<{ unit: string; quantity: string }> }>>(
+      `/addresses/${from_address}/utxos`
+    );
+    if (!utxos.length) throw new Error(`No UTxOs found at ${from_address}`);
+
+    const latestBlock = await bf<{ slot: number }>("/blocks/latest");
+    const ttl = latestBlock.slot + 7200;
+
+    const provider   = new BlockfrostProvider(BF_KEY);
+    const txBuilder  = new MeshTxBuilder({ fetcher: provider, evaluator: provider });
+
+    for (const u of utxos) {
+      txBuilder.txIn(u.tx_hash, u.tx_index, u.amount, from_address);
+    }
+
+    txBuilder
+      .txOut(to_address, [{ unit: "lovelace", quantity: amount_lovelace }])
+      .changeAddress(from_address)
+      .invalidHereafter(ttl);
+
+    const unsigned_cbor = await txBuilder.complete();
+    res.json({ unsigned_cbor });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+/** Submit a signed transaction via Blockfrost */
+app.post("/submit-tx", async (req, res) => {
+  const { signed_cbor } = req.body as { signed_cbor: string };
+  try {
+    const txBytes = Buffer.from(signed_cbor, "hex");
+    const bfRes = await fetch(`${BF_URL}/tx/submit`, {
+      method:  "POST",
+      headers: { project_id: BF_KEY, "Content-Type": "application/cbor" },
+      body:    txBytes,
+    });
+    if (!bfRes.ok) {
+      const msg = await bfRes.text();
+      throw new Error(`Blockfrost submit error: ${msg}`);
+    }
+    const tx_hash: string = await bfRes.json();
+    res.json({ tx_hash, explorer_url: `https://cardanoscan.io/transaction/${tx_hash}` });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
