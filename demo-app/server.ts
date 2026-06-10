@@ -880,29 +880,72 @@ app.post("/build-tx", async (req, res) => {
     amount_lovelace: string;
   };
   try {
-    const { MeshTxBuilder, BlockfrostProvider } = await import("@meshsdk/core");
+    // Use CSL directly — avoids @meshsdk/core and its libsodium-wrappers-sumo ESM bug
+    const CSL = await import("@emurgo/cardano-serialization-lib-nodejs");
 
-    const utxos = await bf<Array<{ tx_hash: string; tx_index: number; amount: Array<{ unit: string; quantity: string }> }>>(
-      `/addresses/${from_address}/utxos`
-    );
-    if (!utxos.length) throw new Error(`No UTxOs found at ${from_address}`);
+    const [bfUtxos, params, latestBlock] = await Promise.all([
+      bf<Array<{ tx_hash: string; tx_index: number; amount: Array<{ unit: string; quantity: string }> }>>(
+        `/addresses/${from_address}/utxos`
+      ),
+      bf<{ min_fee_a: number; min_fee_b: number; coins_per_utxo_size: string; pool_deposit: string; key_deposit: string; max_val_size: string; max_tx_size: number }>(
+        "/epochs/latest/parameters"
+      ),
+      bf<{ slot: number }>("/blocks/latest"),
+    ]);
 
-    const latestBlock = await bf<{ slot: number }>("/blocks/latest");
-    const ttl = latestBlock.slot + 7200;
+    if (!bfUtxos.length) throw new Error(`No UTxOs found at ${from_address}`);
 
-    const provider   = new BlockfrostProvider(BF_KEY);
-    const txBuilder  = new MeshTxBuilder({ fetcher: provider, evaluator: provider });
-
-    for (const u of utxos) {
-      txBuilder.txIn(u.tx_hash, u.tx_index, u.amount, from_address);
+    // Build UTxO list
+    const utxoList = CSL.TransactionUnspentOutputs.new();
+    for (const u of bfUtxos) {
+      const lovelace = u.amount.find((a) => a.unit === "lovelace")?.quantity ?? "0";
+      utxoList.add(
+        CSL.TransactionUnspentOutput.new(
+          CSL.TransactionInput.new(CSL.TransactionHash.from_hex(u.tx_hash), u.tx_index),
+          CSL.TransactionOutput.new(
+            CSL.Address.from_bech32(from_address),
+            CSL.Value.new(CSL.BigNum.from_str(lovelace))
+          )
+        )
+      );
     }
 
-    txBuilder
-      .txOut(to_address, [{ unit: "lovelace", quantity: amount_lovelace }])
-      .changeAddress(from_address)
-      .invalidHereafter(ttl);
+    const txCfg = CSL.TransactionBuilderConfigBuilder.new()
+      .fee_algo(CSL.LinearFee.new(
+        CSL.BigNum.from_str(String(params.min_fee_a)),
+        CSL.BigNum.from_str(String(params.min_fee_b))
+      ))
+      .coins_per_utxo_byte(CSL.BigNum.from_str(params.coins_per_utxo_size))
+      .pool_deposit(CSL.BigNum.from_str(params.pool_deposit))
+      .key_deposit(CSL.BigNum.from_str(params.key_deposit))
+      .max_value_size(parseInt(params.max_val_size ?? "5000"))
+      .max_tx_size(params.max_tx_size ?? 16384)
+      .build();
 
-    const unsigned_cbor = await txBuilder.complete();
+    const txBuilder = CSL.TransactionBuilder.new(txCfg);
+
+    // Payment output
+    txBuilder.add_output(
+      CSL.TransactionOutput.new(
+        CSL.Address.from_bech32(to_address),
+        CSL.Value.new(CSL.BigNum.from_str(amount_lovelace))
+      )
+    );
+
+    // TTL = latest slot + 2 hours
+    txBuilder.set_ttl_bignum(CSL.BigNum.from_str(String(latestBlock.slot + 7200)));
+
+    // CIP-2 coin selection + change back to sender
+    txBuilder.add_inputs_from_and_change(
+      utxoList,
+      CSL.CoinSelectionStrategyCIP2.LargestFirst,
+      CSL.ChangeConfig.new(CSL.Address.from_bech32(from_address))
+    );
+
+    const unsigned_cbor = Buffer.from(
+      CSL.Transaction.new(txBuilder.build(), CSL.TransactionWitnessSet.new()).to_bytes()
+    ).toString("hex");
+
     res.json({ unsigned_cbor });
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : String(e) });

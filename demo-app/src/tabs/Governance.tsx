@@ -14,6 +14,8 @@ interface Proposal {
   rationale: string | null;
   motivation: string | null;
   meta_url:  string | null;
+  vote_summary?: { yes_pct: number; no_pct: number; abstain_pct: number; total_votes: number };
+  outcome_prediction?: { prediction: string; confidence: string };
 }
 
 interface VoteTally { yes: number; no: number; abstain: number; }
@@ -376,6 +378,84 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   );
 }
 
+// ── sentiment helpers ──────────────────────────────────────────────────────
+
+function computeSentiment(proposals: Proposal[]) {
+  const withVotes = proposals.filter((p) => p.vote_summary && p.vote_summary.total_votes > 0);
+  if (!withVotes.length) return null;
+
+  const totals = withVotes.reduce(
+    (acc, p) => {
+      const v = p.vote_summary!;
+      acc.yes     += v.yes_pct     * v.total_votes;
+      acc.no      += v.no_pct      * v.total_votes;
+      acc.abstain += v.abstain_pct * v.total_votes;
+      acc.votes   += v.total_votes;
+      return acc;
+    },
+    { yes: 0, no: 0, abstain: 0, votes: 0 }
+  );
+
+  const yes_pct     = Math.round(totals.yes     / totals.votes);
+  const no_pct      = Math.round(totals.no      / totals.votes);
+  const abstain_pct = Math.round(totals.abstain / totals.votes);
+
+  const likely_pass  = proposals.filter((p) => p.outcome_prediction?.prediction === "likely_to_pass").length;
+  const likely_fail  = proposals.filter((p) => p.outcome_prediction?.prediction === "likely_to_fail").length;
+
+  let mood: string;
+  let moodColor: string;
+  if (yes_pct >= 60)      { mood = "Generally supportive";  moodColor = "text-green-700"; }
+  else if (no_pct >= 60)  { mood = "Largely opposed";       moodColor = "text-red-600"; }
+  else if (yes_pct > no_pct) { mood = "Leaning supportive"; moodColor = "text-green-600"; }
+  else if (no_pct > yes_pct) { mood = "Leaning opposed";    moodColor = "text-red-500"; }
+  else                    { mood = "Mixed views";            moodColor = "text-amber-600"; }
+
+  return { yes_pct, no_pct, abstain_pct, total_votes: totals.votes, withVotes: withVotes.length, likely_pass, likely_fail, mood, moodColor };
+}
+
+function SentimentOverview({ proposals }: { proposals: Proposal[] }) {
+  const s = computeSentiment(proposals);
+  if (!s) return null;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-blue-100">
+      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Community Sentiment</p>
+      <div className="flex items-center gap-3 mb-2">
+        <span className={`text-sm font-bold ${s.moodColor}`}>{s.mood}</span>
+        <span className="text-xs text-blue-500">
+          across {s.withVotes} proposal{s.withVotes !== 1 ? "s" : ""} · {s.total_votes.toLocaleString()} total votes
+        </span>
+      </div>
+      {/* Aggregate vote bar */}
+      <div className="flex h-2 rounded-full overflow-hidden gap-px mb-1.5">
+        <div className="bg-green-500 transition-all" style={{ width: `${s.yes_pct}%` }} title={`Yes ${s.yes_pct}%`} />
+        <div className="bg-red-400   transition-all" style={{ width: `${s.no_pct}%` }}  title={`No ${s.no_pct}%`} />
+        <div className="bg-gray-300  transition-all" style={{ width: `${s.abstain_pct}%` }} title={`Abstain ${s.abstain_pct}%`} />
+      </div>
+      <div className="flex gap-4 text-xs text-blue-800">
+        <span><span className="text-green-600 font-semibold">{s.yes_pct}%</span> yes</span>
+        <span><span className="text-red-500 font-semibold">{s.no_pct}%</span> no</span>
+        <span><span className="text-gray-500">{s.abstain_pct}%</span> abstain</span>
+      </div>
+      {(s.likely_pass > 0 || s.likely_fail > 0) && (
+        <div className="flex gap-3 mt-2 text-xs">
+          {s.likely_pass > 0 && (
+            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+              {s.likely_pass} likely to pass
+            </span>
+          )}
+          {s.likely_fail > 0 && (
+            <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+              {s.likely_fail} likely to fail
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── main component ─────────────────────────────────────────────────────────
 
 export function Governance() {
@@ -526,16 +606,17 @@ export function Governance() {
               </button>
             )}
           </div>
-          {loadingOverview && (
+          {loadingOverview && !overview && (
             <div className="space-y-2">
               <Skeleton className="h-3 w-full" />
               <Skeleton className="h-3 w-5/6" />
               <Skeleton className="h-3 w-4/5" />
             </div>
           )}
-          {overview && !loadingOverview && (
+          {overview && (
             <p className="text-sm text-blue-900 leading-relaxed">{overview}</p>
           )}
+          <SentimentOverview proposals={proposals} />
           {!overview && !loadingOverview && (
             <p className="text-xs text-blue-400">Click the button to get an AI-powered summary of all {proposals.length} active proposals.</p>
           )}

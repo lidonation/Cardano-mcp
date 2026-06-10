@@ -13,10 +13,18 @@ export async function callTool<T = unknown>(
     body: JSON.stringify(params),
   });
 
-  const data = await res.json();
+  const text = await res.text();
+  if (!text.trim()) throw new Error(`${toolName} returned an empty response (${res.status})`);
+
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`${toolName} returned invalid JSON: ${text.slice(0, 120)}`);
+  }
 
   if (!res.ok) {
-    throw new Error(data.error ?? `${toolName} failed (${res.status})`);
+    throw new Error((data as any).error ?? `${toolName} failed (${res.status})`);
   }
 
   return data as T;
