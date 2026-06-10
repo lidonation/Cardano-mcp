@@ -557,6 +557,48 @@ ${rationaleBlock}`;
       };
     }
 
+    // ── Contracts tools ──────────────────────────────────────────────────
+    case "get_script_info": {
+      const { script_hash } = params as { script_hash: string };
+      const [info, cborRes] = await Promise.allSettled([
+        bf<any>(`/scripts/${script_hash}`),
+        bf<{ cbor: string | null }>(`/scripts/${script_hash}/cbor`),
+      ]);
+      if (info.status === "rejected") throw new Error(`Script ${script_hash} not found`);
+      const scriptInfo = info.value;
+      const cbor = cborRes.status === "fulfilled" ? cborRes.value.cbor : null;
+      return { ...scriptInfo, cbor };
+    }
+
+    case "decode_cbor_datum": {
+      const { cbor_hex } = params as { cbor_hex: string };
+      const { decodeCborDatum } = await import("../src/lib/cbor.js");
+      const decoded = await decodeCborDatum(cbor_hex);
+      return { cbor_hex, decoded };
+    }
+
+    case "encode_plutus_data": {
+      const { plutus_data } = params as { plutus_data: any };
+      const { encodePlutusDataToHex } = await import("../src/lib/cbor.js");
+      const cbor_hex = await encodePlutusDataToHex(plutus_data);
+      return { cbor_hex, input: plutus_data };
+    }
+
+    case "scaffold_validator": {
+      const TEMPLATES: Record<string, string> = {
+        simple_lock: `use cardano/transaction.{Transaction, OutputReference}\n\nvalidator simple_lock {\n  spend(\n    _datum: Option<Data>,\n    _redeemer: Data,\n    _own_ref: OutputReference,\n    tx: Transaction,\n  ) {\n    let owner_pkh: ByteArray = #"REPLACE_WITH_OWNER_PKH"\n    list.any(tx.extra_signatories, fn(sig) { sig == owner_pkh })\n  }\n}`,
+        time_lock: `use aiken/interval\nuse cardano/transaction.{Transaction, OutputReference}\n\nvalidator time_lock {\n  spend(\n    _datum: Option<Data>,\n    _redeemer: Data,\n    _own_ref: OutputReference,\n    tx: Transaction,\n  ) {\n    let unlock_time: Int = REPLACE_WITH_POSIX_MS\n    interval.is_entirely_after(tx.validity_range, unlock_time)\n  }\n}`,
+        multisig: `use cardano/transaction.{Transaction, OutputReference}\n\ntype Datum {\n  signers: List<ByteArray>\n  threshold: Int\n}\n\nvalidator multisig {\n  spend(\n    datum: Option<Datum>,\n    _redeemer: Data,\n    _own_ref: OutputReference,\n    tx: Transaction,\n  ) {\n    when datum is {\n      None -> False\n      Some(d) -> {\n        let matched = list.filter(d.signers, fn(pkh) { list.any(tx.extra_signatories, fn(sig) { sig == pkh }) })\n        list.length(matched) >= d.threshold\n      }\n    }\n  }\n}`,
+        vesting: `use aiken/interval\nuse cardano/transaction.{Transaction, OutputReference}\n\ntype Datum {\n  beneficiary: ByteArray\n  owner: ByteArray\n  cliff_time: Int\n}\n\ntype Redeemer { Claim  Cancel }\n\nvalidator vesting {\n  spend(\n    datum: Option<Datum>,\n    redeemer: Redeemer,\n    _own_ref: OutputReference,\n    tx: Transaction,\n  ) {\n    when datum is {\n      None -> False\n      Some(d) ->\n        when redeemer is {\n          Claim -> interval.is_entirely_after(tx.validity_range, d.cliff_time) && list.any(tx.extra_signatories, fn(sig) { sig == d.beneficiary })\n          Cancel -> list.any(tx.extra_signatories, fn(sig) { sig == d.owner })\n        }\n    }\n  }\n}`,
+        nft_mint: `use cardano/transaction.{Transaction}\nuse cardano/assets.{PolicyId}\n\nvalidator nft_mint {\n  mint(_redeemer: Data, _policy_id: PolicyId, tx: Transaction) {\n    let required_utxo_hash: ByteArray = #"REPLACE_WITH_TX_HASH"\n    let required_utxo_index: Int = 0\n    list.any(tx.inputs, fn(input) {\n      input.output_reference.transaction_id == required_utxo_hash &&\n      input.output_reference.output_index == required_utxo_index\n    })\n  }\n}`,
+        oracle: `use cardano/transaction.{Transaction, OutputReference, Input}\nuse cardano/address.{Address}\n\ntype OracleDatum { price: Int  timestamp: Int }\ntype SpendDatum  { min_price: Int }\n\nvalidator oracle_consumer {\n  spend(\n    datum: Option<SpendDatum>,\n    _redeemer: Data,\n    _own_ref: OutputReference,\n    tx: Transaction,\n  ) {\n    let oracle_address: Address = REPLACE_WITH_ORACLE_ADDRESS\n    when datum is {\n      None -> False\n      Some(d) -> {\n        let oracle_input = list.find(tx.reference_inputs, fn(i) { i.output.address == oracle_address })\n        when oracle_input is {\n          None -> False\n          Some(i) -> when i.output.datum is {\n            InlineDatum(raw) -> { expect oracle_datum: OracleDatum = raw; oracle_datum.price >= d.min_price }\n            _ -> False\n          }\n        }\n      }\n    }\n  }\n}`,
+      };
+      const { template = "simple_lock" } = params as { template?: string };
+      const code = TEMPLATES[template];
+      if (!code) throw new Error(`Unknown template: ${template}`);
+      return { template, code };
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

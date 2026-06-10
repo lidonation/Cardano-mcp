@@ -4,15 +4,17 @@ import { Wallet } from "./tabs/Wallet";
 import { Tokens } from "./tabs/Tokens";
 import { Governance } from "./tabs/Governance";
 import { Network } from "./tabs/Network";
+import { Contracts } from "./tabs/Contracts";
 import { ChatBot } from "./components/ChatBot";
 
-type Tab = "wallet" | "tokens" | "governance" | "network";
+type Tab = "wallet" | "tokens" | "governance" | "network" | "contracts";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "wallet",     label: "Wallet",     icon: "₳" },
+  { id: "wallet",     label: "Wallet",      icon: "₳" },
   { id: "tokens",     label: "Tokens & NFTs", icon: "◈" },
-  { id: "governance", label: "Governance", icon: "⚖" },
-  { id: "network",    label: "Network",    icon: "⬡" },
+  { id: "governance", label: "Governance",  icon: "⚖" },
+  { id: "contracts",  label: "Contracts",   icon: "📜" },
+  { id: "network",    label: "Network",     icon: "⬡" },
 ];
 
 interface ServerStatus {
@@ -115,6 +117,7 @@ export default function App() {
         {tab === "wallet"     && <Wallet />}
         {tab === "tokens"     && <Tokens />}
         {tab === "governance" && <Governance />}
+        {tab === "contracts"  && <Contracts />}
         {tab === "network"    && <Network />}
       </main>
 
