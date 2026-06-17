@@ -129,6 +129,20 @@ function lovelaceToAda(lovelace: string | number | bigint): string {
   return (Number(n) / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 });
 }
 
+// ── Server-side in-memory cache ───────────────────────────────────────────
+// Avoids re-fetching expensive endpoints (proposal list, treasury) on every
+// chat message within a server process lifetime.
+const _serverCache = new Map<string, { data: unknown; expires: number }>();
+
+async function cachedTool(name: string, params: Params, ttlMs: number): Promise<unknown> {
+  const key = `${name}:${JSON.stringify(params)}`;
+  const hit = _serverCache.get(key);
+  if (hit && Date.now() < hit.expires) return hit.data;
+  const data = await handleTool(name, params);
+  _serverCache.set(key, { data, expires: Date.now() + ttlMs });
+  return data;
+}
+
 // ── Tool handlers ───────────────────────────────────────────────────────────
 
 type Params = Record<string, unknown>;
@@ -428,7 +442,21 @@ async function handleTool(name: string, params: Params): Promise<unknown> {
       const yesPct = total ? Math.round((tally.yes / total) * 100) : 0;
       const noPct  = total ? Math.round((tally.no  / total) * 100) : 0;
 
-      // 5. If no rationale docs, return tallies only
+      // Build quote excerpts (first 280 chars of rationale, cleaned of markdown)
+      const quotes = validDocs.map((d) => ({
+        voter_role: d.voter_role,
+        vote:       d.vote,
+        excerpt:    (d.text ?? "")
+          .replace(/\*\*([^*]+)\*\*/g, "$1")
+          .replace(/\*([^*]+)\*/g, "$1")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replace(/^#{1,6}\s/gm, "")
+          .replace(/\n{2,}/g, " ")
+          .trim()
+          .slice(0, 280),
+      }));
+
+      // 5. If no rationale docs, return tallies + quotes (empty) only
       if (validDocs.length === 0) {
         return {
           tally,
@@ -436,6 +464,7 @@ async function handleTool(name: string, params: Params): Promise<unknown> {
           no_pct: noPct,
           ai_summary: null,
           rationale_count: 0,
+          quotes: [],
           note: "No voter rationale documents found for this proposal.",
         };
       }
@@ -470,6 +499,7 @@ ${rationaleBlock}`;
         no_pct: noPct,
         ai_summary: summary,
         rationale_count: validDocs.length,
+        quotes,
       };
     }
 
@@ -646,12 +676,13 @@ async function buildChatContext(message: string): Promise<{
   const cards: any[] = [];
 
   try {
+    const FIVE_MIN = 5 * 60 * 1000;
     const fetches: Promise<any>[] = [
-      handleTool("get_network_info",    {}) as Promise<any>,
-      handleTool("get_protocol_params", {}) as Promise<any>,
+      cachedTool("get_network_info",    {}, 60_000)     as Promise<any>, // 1 min
+      cachedTool("get_protocol_params", {}, FIVE_MIN)   as Promise<any>, // 5 min
     ];
-    if (isGovernance) fetches.push(handleTool("list_governance_proposals", {}) as Promise<any>);
-    if (isTreasury)   fetches.push(handleTool("get_treasury_balance",      {}) as Promise<any>);
+    if (isGovernance) fetches.push(cachedTool("list_governance_proposals", {}, FIVE_MIN) as Promise<any>);
+    if (isTreasury)   fetches.push(cachedTool("get_treasury_balance",      {}, FIVE_MIN) as Promise<any>);
 
     const [net, params, ...extra] = await Promise.all(fetches);
 
@@ -887,6 +918,45 @@ Write a 6–8 sentence overview. Group by proposal type, highlight the most sign
     }
   } catch (e: unknown) {
     res.write(`data: ${JSON.stringify({ error: e instanceof Error ? e.message : String(e) })}\n\n`);
+  }
+
+  res.write("data: [DONE]\n\n");
+  res.end();
+});
+
+// ── Batch rationale summarizer ────────────────────────────────────────────
+// Accepts the already-loaded proposal list, runs get_proposal_sentiment for
+// each (3 at a time), and streams results back as they complete.
+app.post("/stream-all-sentiments", async (req, res) => {
+  if (!anthropic) { res.json({ error: "ANTHROPIC_API_KEY not set" }); return; }
+
+  res.setHeader("Content-Type",  "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection",    "keep-alive");
+
+  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  const { proposals = [] } = req.body as { proposals: any[] };
+  const FIFTEEN_MIN = 15 * 60 * 1000;
+  const CONCURRENCY = 3;
+
+  // Process proposals in batches of CONCURRENCY to stay within rate limits
+  for (let i = 0; i < proposals.length; i += CONCURRENCY) {
+    const batch = proposals.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(async (p: any) => {
+      const key = p.proposal_id ?? p.tx_hash ?? String(i);
+      try {
+        const result = await cachedTool("get_proposal_sentiment", {
+          proposal_id: p.proposal_id,
+          tx_hash:     p.tx_hash,
+          cert_index:  p.cert_index ?? 0,
+          title:       p.title ?? undefined,
+        }, FIFTEEN_MIN);
+        send({ proposal_id: p.proposal_id, tx_hash: p.tx_hash, key, result });
+      } catch (e) {
+        send({ key, error: (e instanceof Error ? e.message : String(e)) });
+      }
+    }));
   }
 
   res.write("data: [DONE]\n\n");

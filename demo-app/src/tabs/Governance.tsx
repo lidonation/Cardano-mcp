@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { callTool, truncateHash } from "../lib/api";
+import { cachedTool } from "../lib/cache";
 import { Skeleton } from "../components/Skeleton";
 
 interface Proposal {
@@ -89,23 +90,34 @@ function VoteBar({ tally }: { tally: VoteTally }) {
   );
 }
 
+interface SentimentQuote {
+  voter_role: string;
+  vote: string;
+  excerpt: string;
+}
+
 interface SentimentResult {
   tally: { yes: number; no: number; abstain: number };
   yes_pct: number;
   no_pct: number;
   ai_summary: string | null;
   rationale_count: number;
+  quotes?: SentimentQuote[];
   error?: string;
   note?: string;
 }
 
-function ProposalCard({ proposal }: { proposal: Proposal }) {
+function ProposalCard({ proposal, injectedSentiment }: { proposal: Proposal; injectedSentiment?: SentimentResult | null }) {
   const [expanded,        setExpanded]       = useState(false);
   const [votes,           setVotes]          = useState<VoteResult | null>(null);
   const [loadingVotes,    setLoadingVotes]   = useState(false);
   const [showRationale,   setShowRationale]  = useState(false);
-  const [sentiment,       setSentiment]      = useState<SentimentResult | null>(null);
+  const [localSentiment,  setLocalSentiment] = useState<SentimentResult | null>(null);
   const [loadingSentiment, setLoadingSentiment] = useState(false);
+
+  // Prefer injected (batch-loaded) sentiment over locally-fetched
+  const sentiment    = injectedSentiment ?? localSentiment;
+  const setSentiment = setLocalSentiment;
 
   const toggle = async () => {
     const next = !expanded;
@@ -113,7 +125,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
     if (next && !votes && !loadingVotes) {
       setLoadingVotes(true);
       try {
-        const v = await callTool<VoteResult>("get_proposal_votes", {
+        const v = await cachedTool<VoteResult>("get_proposal_votes", {
           tx_hash:     proposal.tx_hash,
           cert_index:  proposal.cert_index,
           proposal_id: proposal.proposal_id,
@@ -131,12 +143,12 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
     if (sentiment || loadingSentiment) return;
     setLoadingSentiment(true);
     try {
-      const s = await callTool<SentimentResult>("get_proposal_sentiment", {
+      const s = await cachedTool<SentimentResult>("get_proposal_sentiment", {
         proposal_id: proposal.proposal_id,
         tx_hash:     proposal.tx_hash,
         cert_index:  proposal.cert_index,
         title:       proposal.title ?? undefined,
-      });
+      }, 15 * 60 * 1000); // 15 min — DRep rationales don't change mid-session
       setSentiment(s);
     } catch (e: unknown) {
       setSentiment({ tally: { yes: 0, no: 0, abstain: 0 }, yes_pct: 0, no_pct: 0, ai_summary: null, rationale_count: 0, error: (e as Error).message });
@@ -326,15 +338,45 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
                   </p>
                 </div>
 
+                {/* Always-visible computed sentiment text */}
+                <p className="text-xs text-gray-600 leading-relaxed">{describeSentiment(sentiment)}</p>
+
+                {/* AI rationale summary if DRep docs were found */}
                 {sentiment.ai_summary && (
                   <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                    <p className="text-xs font-medium text-blue-600 mb-1.5">What DReps said:</p>
+                    <p className="text-xs font-medium text-blue-600 mb-1.5">AI Summary</p>
                     <p className="text-sm text-gray-700 leading-relaxed">{sentiment.ai_summary}</p>
                   </div>
                 )}
 
-                {sentiment.note && !sentiment.ai_summary && (
-                  <p className="text-xs text-gray-400">{sentiment.note}</p>
+                {/* DRep rationale quotes */}
+                {sentiment.quotes && sentiment.quotes.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      DRep Rationales ({sentiment.quotes.length})
+                    </p>
+                    {sentiment.quotes.map((q, i) => {
+                      const voteColor = q.vote === "yes"
+                        ? "border-green-300 bg-green-50"
+                        : q.vote === "no"
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 bg-gray-50";
+                      const voteLabel = q.vote === "yes"
+                        ? "text-green-700"
+                        : q.vote === "no"
+                        ? "text-red-600"
+                        : "text-gray-500";
+                      return (
+                        <div key={i} className={`border-l-2 rounded-r-lg px-3 py-2 ${voteColor}`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-semibold text-gray-500 uppercase">{q.voter_role}</span>
+                            <span className={`text-[10px] font-bold uppercase ${voteLabel}`}>voted {q.vote}</span>
+                          </div>
+                          <p className="text-xs text-gray-700 leading-relaxed italic">"{q.excerpt}{q.excerpt.length >= 280 ? "…" : ""}"</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -376,6 +418,36 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
       )}
     </div>
   );
+}
+
+// ── sentiment text generation ─────────────────────────────────────────────
+
+function describeSentiment(s: SentimentResult): string {
+  const total = s.tally.yes + s.tally.no + s.tally.abstain;
+  const participation = total < 10 ? "very few votes" : total < 30 ? "a modest number of votes" : `${total} votes`;
+
+  if (total === 0) return "No votes have been recorded for this proposal yet.";
+
+  let mood: string;
+  if (s.yes_pct >= 80)      mood = "overwhelming support";
+  else if (s.yes_pct >= 60) mood = "clear majority support";
+  else if (s.yes_pct >= 50) mood = "a slight lean toward approval";
+  else if (s.no_pct >= 80)  mood = "strong opposition";
+  else if (s.no_pct >= 60)  mood = "a clear majority against";
+  else if (s.no_pct >= 50)  mood = "a slight lean toward rejection";
+  else                       mood = "a closely divided community";
+
+  const abstainNote = s.tally.abstain > 0
+    ? ` ${s.tally.abstain} voter${s.tally.abstain !== 1 ? "s" : ""} abstained.`
+    : "";
+
+  const outcomeNote = s.yes_pct >= 67
+    ? " Current vote distribution meets the typical 67% supermajority threshold."
+    : s.yes_pct >= 51
+    ? " The proposal is passing but may not meet the supermajority threshold required for some action types."
+    : " The proposal is currently failing to reach a passing threshold.";
+
+  return `Based on ${participation}, this proposal shows ${mood}.${abstainNote}${outcomeNote}`;
 }
 
 // ── sentiment helpers ──────────────────────────────────────────────────────
@@ -466,14 +538,17 @@ export function Governance() {
   const [filter,        setFilter]        = useState<string>("all");
   const [overview,      setOverview]      = useState<string | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
+  const [sentimentMap,  setSentimentMap]  = useState<Record<string, SentimentResult>>({});
+  const [loadingAllSentiments, setLoadingAllSentiments] = useState(false);
+  const [sentimentProgress, setSentimentProgress] = useState(0);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
       const [propRes, treasRes] = await Promise.allSettled([
-        callTool<{ proposals: Proposal[] }>("list_governance_proposals", {}),
-        callTool<TreasuryData>("get_treasury_balance"),
+        cachedTool<{ proposals: Proposal[] }>("list_governance_proposals", {}),
+        cachedTool<TreasuryData>("get_treasury_balance"),
       ]);
       if (propRes.status === "fulfilled") setProposals(propRes.value.proposals ?? []);
       else setError((propRes.reason as Error)?.message ?? "Failed to load proposals");
@@ -530,6 +605,53 @@ export function Governance() {
       setOverview("Failed to generate overview — check your API key.");
     }
     setLoadingOverview(false);
+  }
+
+  async function fetchAllSentiments() {
+    if (loadingAllSentiments || !proposals.length) return;
+    setLoadingAllSentiments(true);
+    setSentimentProgress(0);
+
+    try {
+      const res = await fetch("/stream-all-sentiments", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ proposals }),
+      });
+      if (!res.body) throw new Error("No stream");
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let done_count = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const event = JSON.parse(raw) as { key?: string; proposal_id?: string; tx_hash?: string; result?: SentimentResult; error?: string };
+            if (event.result) {
+              const id = event.proposal_id ?? event.tx_hash ?? event.key ?? "";
+              setSentimentMap((prev) => ({ ...prev, [id]: event.result! }));
+              done_count++;
+              setSentimentProgress(Math.round((done_count / proposals.length) * 100));
+            }
+          } catch { /* skip */ }
+        }
+      }
+    } catch {
+      // silently fall through — individual cards still work
+    }
+
+    setLoadingAllSentiments(false);
   }
 
   // Collect unique action types for filter tabs
@@ -589,13 +711,26 @@ export function Governance() {
               <span className="text-sm font-semibold text-blue-900">AI Governance Overview</span>
             </div>
             {!overview && (
-              <button
-                onClick={fetchOverview}
-                disabled={loadingOverview}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {loadingOverview ? "Summarising…" : "Summarise all proposals"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchAllSentiments}
+                  disabled={loadingAllSentiments}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {loadingAllSentiments
+                    ? `Analysing… ${sentimentProgress}%`
+                    : Object.keys(sentimentMap).length > 0
+                    ? "Re-analyse rationales"
+                    : "Analyse all rationales"}
+                </button>
+                <button
+                  onClick={fetchOverview}
+                  disabled={loadingOverview}
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {loadingOverview ? "Summarising…" : "Summarise all proposals"}
+                </button>
+              </div>
             )}
             {overview && (
               <button
@@ -648,7 +783,11 @@ export function Governance() {
       )}
 
       {!loading && visible.map((p) => (
-        <ProposalCard key={`${p.tx_hash}-${p.cert_index}`} proposal={p} />
+        <ProposalCard
+          key={`${p.tx_hash}-${p.cert_index}`}
+          proposal={p}
+          injectedSentiment={sentimentMap[p.proposal_id ?? p.tx_hash ?? ""] ?? null}
+        />
       ))}
     </div>
   );

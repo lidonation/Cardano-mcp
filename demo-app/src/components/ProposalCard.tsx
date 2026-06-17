@@ -31,6 +31,16 @@ function stripMd(text: string): string {
     .trim();
 }
 
+const TYPE_FALLBACK: Record<string, string> = {
+  TreasuryWithdrawal:   "Proposes withdrawing ADA from the Cardano treasury to fund a project or initiative.",
+  ParameterChange:      "Proposes changes to on-chain protocol parameters such as fees, block size, or staking rewards.",
+  UpdateConstitution:   "Proposes amending the Cardano constitution — the foundational governance document.",
+  HardForkInitiation:   "Initiates a protocol upgrade (hard fork) to evolve the Cardano network.",
+  UpdateCommittee:      "Proposes adding, removing, or changing the quorum of the Constitutional Committee.",
+  MotionOfNoConfidence: "Signals that the community has lost confidence in the current Constitutional Committee.",
+  InfoAction:           "An on-chain informational proposal — no protocol changes, used to gauge community sentiment.",
+};
+
 const TYPE_COLORS: Record<string, string> = {
   TreasuryWithdrawal:  "bg-amber-100 text-amber-800",
   ParameterChange:     "bg-blue-100 text-blue-800",
@@ -91,9 +101,9 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
 
       <p className="text-sm font-medium text-gray-900 leading-snug mb-1">{title}</p>
 
-      {proposal.abstract && (
-        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{stripMd(proposal.abstract)}</p>
-      )}
+      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+        {proposal.abstract ? stripMd(proposal.abstract) : (TYPE_FALLBACK[type] ?? "")}
+      </p>
 
       {proposal.withdrawal_ada && (
         <p className="text-xs font-semibold text-amber-700 mt-1">₳{Number(proposal.withdrawal_ada).toLocaleString()}</p>
